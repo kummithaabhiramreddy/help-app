@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EBOD – Organ Donation Information</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #ff2d4b;
+      --red2: #c0182e;
+      --gold: #f0a500;
+      --dark: #080810;
+      --dark2: #0f0f1e;
+      --glass: rgba(255,255,255,0.05);
+      --border: rgba(255,255,255,0.1);
+    }
+    *,*::before,*::after { margin:0;padding:0;box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--dark);color:#fff;font-family:'Raleway',sans-serif;overflow-x:hidden;min-height:100vh; }
+    body::before {
+      content:'';position:fixed;inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events:none;z-index:0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position:fixed;top:0;left:0;right:0;z-index:100;
+      padding:16px 40px;
+      display:flex;align-items:center;justify-content:space-between;
+      background:rgba(8,8,16,0.85);
+      backdrop-filter:blur(20px);
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .nav-logo { font-family:'Cinzel',serif;font-size:1.3rem;font-weight:900;color:#fff;text-decoration:none; }
+    .nav-logo span { color:var(--red); }
+    .nav-links { display:flex;align-items:center;gap:32px; }
+    .nav-links a { color:rgba(255,255,255,0.55);text-decoration:none;font-size:.85rem;font-weight:500;letter-spacing:.5px;transition:color .2s; }
+    .nav-links a:hover { color:#fff; }
+    .nav-cta {
+      background:linear-gradient(135deg,var(--red),var(--red2));
+      color:#fff!important;
+      padding:10px 24px;border-radius:50px;
+      font-family:'Cinzel',serif;font-size:.82rem;letter-spacing:1.5px;
+      box-shadow:0 4px 20px rgba(255,45,75,0.4);
+      transition:transform .2s,box-shadow .2s!important;
+    }
+    .nav-cta:hover { transform:translateY(-2px);box-shadow:0 8px 30px rgba(255,45,75,0.55)!important; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      position:relative;padding:100px 20px 80px;
+      background:
+        radial-gradient(ellipse 100% 60% at 50% 0%,rgba(255,45,75,0.18) 0%,transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 100%,rgba(192,24,46,0.12) 0%,transparent 60%),
+        var(--dark);
+      z-index:1;
+    }
+    .ring-bg {
+      position:absolute;width:700px;height:700px;border-radius:50%;
+      border:1px solid rgba(255,45,75,0.07);
+      top:50%;left:50%;transform:translate(-50%,-50%);
+      animation:spinSlow 40s linear infinite;pointer-events:none;
+    }
+    .ring-bg::before { content:'';position:absolute;inset:40px;border-radius:50%;border:1px solid rgba(255,45,75,0.05); }
+    .ring-bg::after  { content:'';position:absolute;inset:80px;border-radius:50%;border:1px solid rgba(255,45,75,0.04); }
+    @keyframes spinSlow { to { transform:translate(-50%,-50%) rotate(360deg); } }
+
+    .pulse-dot {
+      position:absolute;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,45,75,0.6) 0%,transparent 70%);
+      animation:pulsate 2.4s ease-in-out infinite;pointer-events:none;
+    }
+    @keyframes pulsate { 0%,100%{transform:scale(1);opacity:.5} 50%{transform:scale(1.6);opacity:.15} }
+
+    .hero-tag {
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;color:var(--red);
+      text-transform:uppercase;margin-bottom:20px;
+      opacity:0;animation:fadeUp .6s .2s forwards;
+    }
+    .hero h1 {
+      font-family:'Cinzel',serif;font-size:clamp(2.6rem,7vw,5.5rem);font-weight:900;
+      line-height:1.05;text-align:center;
+      opacity:0;animation:fadeUp .7s .35s forwards;
+      text-shadow:0 0 60px rgba(255,45,75,0.3);
+    }
+    .hero h1 span { color:var(--red); }
+    .hero p {
+      font-size:1.05rem;color:rgba(255,255,255,0.55);max-width:540px;
+      text-align:center;line-height:1.8;margin-top:18px;font-weight:300;
+      opacity:0;animation:fadeUp .7s .5s forwards;
+    }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(22px)} to{opacity:1;transform:translateY(0)} }
+
+    .hero-btns {
+      margin-top:48px;display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+      opacity:0;animation:fadeUp .7s .7s forwards;
+    }
+    .hero-cta {
+      display:inline-flex;align-items:center;gap:12px;
+      background:linear-gradient(135deg,var(--red),var(--red2));
+      color:#fff;font-family:'Cinzel',serif;font-size:1rem;letter-spacing:2px;
+      padding:18px 40px;border-radius:50px;border:none;cursor:pointer;
+      box-shadow:0 0 40px rgba(255,45,75,0.45),0 8px 30px rgba(0,0,0,0.4);
+      transition:transform .2s,box-shadow .2s;text-decoration:none;
+    }
+    .hero-cta:hover { transform:translateY(-3px) scale(1.02);box-shadow:0 0 60px rgba(255,45,75,0.6),0 12px 40px rgba(0,0,0,0.5); }
+    .hero-cta-outline {
+      display:inline-flex;align-items:center;gap:12px;
+      background:transparent;
+      color:#fff;font-family:'Cinzel',serif;font-size:1rem;letter-spacing:2px;
+      padding:18px 40px;border-radius:50px;
+      border:1.5px solid rgba(255,255,255,0.2);
+      cursor:pointer;text-decoration:none;
+      transition:border-color .2s,background .2s,transform .2s;
+    }
+    .hero-cta-outline:hover { border-color:var(--red);background:rgba(255,45,75,0.08);transform:translateY(-3px); }
+
+    .arrow { width:22px;height:22px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;animation:bounceDown 1.5s ease-in-out infinite; }
+    @keyframes bounceDown { 0%,100%{transform:translateY(0)} 50%{transform:translateY(3px)} }
+
+    /* ── STATS ── */
+    .stats-bar {
+      position:relative;z-index:1;
+      background:rgba(255,255,255,0.03);
+      border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+      padding:28px 20px;display:flex;justify-content:center;gap:0;flex-wrap:wrap;
+    }
+    .stat { padding:12px 50px;border-right:1px solid var(--border);text-align:center; }
+    .stat:last-child { border-right:none; }
+    .stat-num { font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--red);display:block; }
+    .stat-label { font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-top:4px;display:block; }
+
+    /* ── ORGANS ── */
+    .organs-section { position:relative;z-index:1;padding:100px 20px 80px;background:var(--dark2); }
+    .section-title { font-family:'Cinzel',serif;font-size:clamp(1.6rem,4vw,2.8rem);text-align:center;margin-bottom:12px;font-weight:700; }
+    .section-sub { text-align:center;color:rgba(255,255,255,0.4);font-size:.95rem;font-weight:300;margin-bottom:70px;letter-spacing:.5px; }
+    .section-title span { color:var(--red); }
+
+    .organ-grid { display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:28px;max-width:1200px;margin:0 auto; }
+    .organ-card {
+      position:relative;background:var(--glass);border:1px solid var(--border);border-radius:20px;
+      padding:36px 28px 28px;overflow:hidden;cursor:pointer;
+      transition:transform .35s cubic-bezier(.34,1.56,.64,1),box-shadow .35s;
+      transform-style:preserve-3d;perspective:800px;
+      opacity:0;animation:cardReveal .6s forwards;
+    }
+    .organ-card:nth-child(1){animation-delay:.1s}.organ-card:nth-child(2){animation-delay:.2s}
+    .organ-card:nth-child(3){animation-delay:.3s}.organ-card:nth-child(4){animation-delay:.4s}
+    .organ-card:nth-child(5){animation-delay:.5s}.organ-card:nth-child(6){animation-delay:.6s}
+    @keyframes cardReveal { from{opacity:0;transform:translateY(30px) rotateX(10deg)} to{opacity:1;transform:translateY(0) rotateX(0)} }
+    .organ-card:hover { transform:translateY(-8px) rotateX(4deg) rotateY(-2deg);box-shadow:0 30px 70px rgba(0,0,0,0.5),0 0 0 1px rgba(255,45,75,0.3); }
+    .organ-card::before {
+      content:'';position:absolute;inset:0;border-radius:20px;
+      background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(255,45,75,0.12) 0%,transparent 60%);
+      opacity:0;transition:opacity .3s;pointer-events:none;
+    }
+    .organ-card:hover::before { opacity:1; }
+    .organ-card::after {
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,transparent,var(--accent,#ff2d4b),transparent);
+      border-radius:20px 20px 0 0;opacity:0;transition:opacity .3s;
+    }
+    .organ-card:hover::after { opacity:1; }
+
+    .organ-icon-wrap {
+      width:70px;height:70px;border-radius:16px;
+      background:rgba(255,45,75,0.1);border:1px solid rgba(255,45,75,0.2);
+      display:flex;align-items:center;justify-content:center;font-size:34px;
+      margin-bottom:20px;position:relative;z-index:1;
+      animation:iconFloat 3s ease-in-out infinite;
+    }
+    .organ-card:nth-child(2) .organ-icon-wrap{animation-delay:.4s;background:rgba(240,165,0,0.1);border-color:rgba(240,165,0,0.2)}
+    .organ-card:nth-child(3) .organ-icon-wrap{animation-delay:.8s;background:rgba(46,213,115,0.1);border-color:rgba(46,213,115,0.2)}
+    .organ-card:nth-child(4) .organ-icon-wrap{animation-delay:1.2s;background:rgba(100,120,255,0.1);border-color:rgba(100,120,255,0.2)}
+    .organ-card:nth-child(5) .organ-icon-wrap{animation-delay:1.6s;background:rgba(255,120,70,0.1);border-color:rgba(255,120,70,0.2)}
+    .organ-card:nth-child(6) .organ-icon-wrap{animation-delay:2s;background:rgba(200,80,255,0.1);border-color:rgba(200,80,255,0.2)}
+    @keyframes iconFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-5px) rotate(3deg)} }
+
+    .organ-name { font-family:'Cinzel',serif;font-size:1.15rem;font-weight:700;margin-bottom:8px;position:relative;z-index:1; }
+    .organ-viability {
+      display:inline-block;font-size:10px;letter-spacing:2px;text-transform:uppercase;
+      padding:3px 12px;border-radius:20px;
+      background:rgba(255,45,75,0.12);border:1px solid rgba(255,45,75,0.25);color:var(--red);
+      margin-bottom:16px;position:relative;z-index:1;
+    }
+    .organ-card:nth-child(2) .organ-viability{background:rgba(240,165,0,0.12);border-color:rgba(240,165,0,0.25);color:var(--gold)}
+    .organ-card:nth-child(3) .organ-viability{background:rgba(46,213,115,0.12);border-color:rgba(46,213,115,0.25);color:#2ed573}
+    .organ-card:nth-child(4) .organ-viability{background:rgba(100,120,255,0.12);border-color:rgba(100,120,255,0.25);color:#6478ff}
+    .organ-card:nth-child(5) .organ-viability{background:rgba(255,120,70,0.12);border-color:rgba(255,120,70,0.25);color:#ff7846}
+    .organ-card:nth-child(6) .organ-viability{background:rgba(200,80,255,0.12);border-color:rgba(200,80,255,0.25);color:#c850ff}
+
+    .organ-desc { font-size:.875rem;color:rgba(255,255,255,0.55);line-height:1.75;font-weight:300;position:relative;z-index:1; }
+    .organ-facts { margin-top:18px;display:flex;flex-direction:column;gap:8px;position:relative;z-index:1; }
+    .fact-row { display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06); }
+    .fact-key { font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px; }
+    .fact-val { font-size:12px;font-weight:600;color:rgba(255,255,255,0.9); }
+
+    .find-donor-btn {
+      display:flex;align-items:center;justify-content:center;gap:8px;
+      width:100%;margin-top:18px;padding:11px 16px;border-radius:10px;
+      border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);
+      color:rgba(255,255,255,0.8);font-family:'Raleway',sans-serif;
+      font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+      cursor:pointer;transition:background .2s,border-color .2s,color .2s,transform .15s,box-shadow .2s;
+      position:relative;z-index:1;text-decoration:none;
+    }
+    .find-donor-btn:hover {
+      background:var(--btn-color,rgba(255,45,75,0.18));
+      border-color:var(--btn-border,rgba(255,45,75,0.5));
+      color:#fff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3);
+    }
+    .find-donor-btn .btn-arrow { font-size:12px;transition:transform .2s; }
+    .find-donor-btn:hover .btn-arrow { transform:translateX(4px); }
+
+    /* ── ORBIT ── */
+    .orbit-section {
+      position:relative;z-index:1;padding:80px 20px;
+      display:flex;flex-direction:column;align-items:center;
+      background:var(--dark);overflow:hidden;
+    }
+    .orbit-title { font-family:'Cinzel',serif;font-size:clamp(1.4rem,3.5vw,2.2rem);text-align:center;margin-bottom:10px; }
+    .orbit-sub { text-align:center;color:rgba(255,255,255,0.4);font-size:.9rem;margin-bottom:60px;font-weight:300; }
+    .orbit-container {
+      width:280px;height:280px;position:relative;
+      transform-style:preserve-3d;
+      animation:orbit3D 12s linear infinite;margin-bottom:60px;
+    }
+    @keyframes orbit3D { 0%{transform:rotateY(0deg) rotateX(20deg)} 100%{transform:rotateY(360deg) rotateX(20deg)} }
+    .orbit-core {
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:80px;height:80px;border-radius:50%;
+      background:radial-gradient(circle,rgba(255,45,75,0.9) 0%,rgba(192,24,46,0.5) 60%,transparent 100%);
+      box-shadow:0 0 40px rgba(255,45,75,0.8),0 0 80px rgba(255,45,75,0.3);
+      animation:corePulse 1.5s ease-in-out infinite;z-index:10;
+      display:flex;align-items:center;justify-content:center;font-size:36px;
+    }
+    @keyframes corePulse { 0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 40px rgba(255,45,75,0.8)} 50%{transform:translate(-50%,-50%) scale(1.12);box-shadow:0 0 70px rgba(255,45,75,0.5)} }
+    .orbit-ring { position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid rgba(255,45,75,0.25);transform-origin:center; }
+    .orbit-ring-1 { width:180px;height:180px;margin:-90px 0 0 -90px;border-color:rgba(255,45,75,0.2); }
+    .orbit-ring-2 { width:260px;height:260px;margin:-130px 0 0 -130px;border-color:rgba(255,45,75,0.1); }
+    .orbit-planet { position:absolute;top:50%;left:50%;font-size:22px;filter:drop-shadow(0 0 8px rgba(255,255,255,0.4)); }
+    .orbit-planet:nth-child(1){animation:planet1 8s linear infinite}
+    .orbit-planet:nth-child(2){animation:planet2 12s linear infinite}
+    .orbit-planet:nth-child(3){animation:planet3 10s linear infinite}
+    .orbit-planet:nth-child(4){animation:planet4 14s linear infinite}
+    @keyframes planet1{from{transform:translate(-50%,-50%) rotate(0deg) translateX(90px) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg) translateX(90px) rotate(-360deg)}}
+    @keyframes planet2{from{transform:translate(-50%,-50%) rotate(90deg) translateX(130px) rotate(-90deg)}to{transform:translate(-50%,-50%) rotate(450deg) translateX(130px) rotate(-450deg)}}
+    @keyframes planet3{from{transform:translate(-50%,-50%) rotate(180deg) translateX(90px) rotate(-180deg)}to{transform:translate(-50%,-50%) rotate(540deg) translateX(90px) rotate(-540deg)}}
+    @keyframes planet4{from{transform:translate(-50%,-50%) rotate(270deg) translateX(130px) rotate(-270deg)}to{transform:translate(-50%,-50%) rotate(630deg) translateX(130px) rotate(-630deg)}}
+
+    /* ── TIMELINE ── */
+    .timeline-section { position:relative;z-index:1;padding:80px 20px;background:var(--dark2); }
+    .timeline { max-width:700px;margin:0 auto;position:relative; }
+    .timeline::before { content:'';position:absolute;left:30px;top:0;bottom:0;width:2px;background:linear-gradient(to bottom,var(--red),transparent); }
+    .timeline-item { display:flex;gap:24px;margin-bottom:36px;align-items:flex-start;opacity:0;animation:slideRight .5s forwards; }
+    .timeline-item:nth-child(1){animation-delay:.1s}.timeline-item:nth-child(2){animation-delay:.2s}
+    .timeline-item:nth-child(3){animation-delay:.3s}.timeline-item:nth-child(4){animation-delay:.4s}
+    .timeline-item:nth-child(5){animation-delay:.5s}.timeline-item:nth-child(6){animation-delay:.6s}
+    @keyframes slideRight { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+    .tl-dot { width:60px;height:60px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;background:var(--dark);position:relative;z-index:1; }
+    .tl-content { flex:1;padding:16px 20px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.07); }
+    .tl-name { font-family:'Cinzel',serif;font-size:.95rem;font-weight:700;margin-bottom:4px; }
+    .tl-time { font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;font-weight:600; }
+    .tl-note { font-size:.8rem;color:rgba(255,255,255,0.45);line-height:1.6;font-weight:300; }
+    .progress-bar { height:4px;border-radius:4px;background:rgba(255,255,255,0.08);margin-top:10px;overflow:hidden; }
+    .progress-fill { height:100%;border-radius:4px;animation:fillBar 1.5s ease forwards; }
+    @keyframes fillBar { from{width:0} }
+
+    /* ── BIG CTA BANNER ── */
+    .cta-banner {
+      position:relative;z-index:1;padding:100px 20px;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 50%,rgba(255,45,75,0.15) 0%,transparent 70%),
+        var(--dark);
+      display:flex;flex-direction:column;align-items:center;text-align:center;
+    }
+    .cta-banner h2 { font-family:'Cinzel',serif;font-size:clamp(2rem,5vw,3.5rem);font-weight:900;margin-bottom:18px; }
+    .cta-banner h2 span { color:var(--red); }
+    .cta-banner p { font-size:1rem;color:rgba(255,255,255,0.5);max-width:500px;line-height:1.8;font-weight:300;margin-bottom:48px; }
+    .cta-big {
+      display:inline-flex;align-items:center;gap:14px;
+      background:linear-gradient(135deg,var(--red),var(--red2));
+      color:#fff;font-family:'Cinzel',serif;font-size:1.1rem;letter-spacing:2px;
+      padding:22px 52px;border-radius:50px;border:none;cursor:pointer;text-decoration:none;
+      box-shadow:0 0 60px rgba(255,45,75,0.5),0 12px 40px rgba(0,0,0,0.4);
+      transition:transform .2s,box-shadow .2s;
+      animation:pulseCta 3s ease-in-out infinite;
+    }
+    @keyframes pulseCta { 0%,100%{box-shadow:0 0 60px rgba(255,45,75,0.5),0 12px 40px rgba(0,0,0,0.4)} 50%{box-shadow:0 0 90px rgba(255,45,75,0.7),0 16px 50px rgba(0,0,0,0.5)} }
+    .cta-big:hover { transform:translateY(-4px) scale(1.02); }
+    .cta-big .cta-icon { font-size:1.4rem; }
+
+    /* ── FOOTER ── */
+    .footer { position:relative;z-index:1;padding:30px 20px;border-top:1px solid var(--border);text-align:center;font-size:.8rem;color:rgba(255,255,255,0.2);letter-spacing:.5px;font-weight:300; }
+
+    @media(max-width:600px){
+      nav { padding:14px 20px; }
+      .nav-links { display:none; }
+      .stats-bar { gap:0; }
+      .stat { padding:12px 20px;border-right:none;border-bottom:1px solid var(--border);width:50%; }
+      .organ-grid { grid-template-columns:1fr; }
+      .timeline::before { left:24px; }
+      .tl-dot { width:48px;height:48px;font-size:18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo">HE<span>L</span>P</a>
+    <div class="nav-links">
+      <a href="searchorgan.html" class="nav-cta">🔍 Find a Donor →</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="top">
+    <div class="ring-bg"></div>
+    <div class="pulse-dot" style="width:500px;height:500px;top:50%;left:50%;transform:translate(-50%,-50%);"></div>
+    <div class="pulse-dot" style="width:300px;height:300px;top:20%;left:10%;animation-delay:.8s;"></div>
+    <div class="pulse-dot" style="width:200px;height:200px;top:70%;left:80%;animation-delay:1.6s;"></div>
+
+    <div class="hero-tag">Emergency Organ Data</div>
+    <h1>Every Organ<br>Is a <span>Second Life</span></h1>
+    <p>A single donor can save up to 8 lives. Explore what organs can be donated, their critical viability windows, and find a registered donor near you.</p>
+
+    <div class="hero-btns">
+      <a href="searchorgan.html" class="hero-cta">
+       🔍 Find a Donor → <span class="arrow"></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-num">8+</span><span class="stat-label">Lives Per Donor</span></div>
+    <div class="stat"><span class="stat-num">6 hrs</span><span class="stat-label">Heart Viability</span></div>
+    <div class="stat"><span class="stat-num">72 hrs</span><span class="stat-label">Kidney Window</span></div>
+    <div class="stat"><span class="stat-num">24/7</span><span class="stat-label">Registry Active</span></div>
+  </div>
+
+  <!-- ORGAN CARDS -->
+  <section class="organs-section" id="organs">
+    <p style="opacity:1;animation:none;font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;color:var(--red);text-transform:uppercase;margin-bottom:16px;text-align:center;">The Gift of Life</p>
+    <h2 class="section-title">Donatable <span>Organs</span></h2>
+    <p class="section-sub">Learn about each organ, its function, and how quickly it must be transplanted after donation.</p>
+
+    <div class="organ-grid">
+      <div class="organ-card" style="--accent:#ff2d4b;">
+        <div class="organ-icon-wrap">❤️</div>
+        <div class="organ-name">Heart</div>
+        <div class="organ-viability">⏱ 4 – 6 Hours</div>
+        <p class="organ-desc">The body's most vital pump. A donated heart beats on in a new chest, giving recipients a second chance at a full life. Time is the most critical factor.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">4 – 6 hrs</span></div>
+          <div class="fact-row"><span class="fact-key">Recipients/year (India)</span><span class="fact-val">~500+</span></div>
+          <div class="fact-row"><span class="fact-key">Age Range (donor)</span><span class="fact-val">Up to 65 yrs</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Heart" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+
+      <div class="organ-card" style="--accent:#f0a500;">
+        <div class="organ-icon-wrap">🫁</div>
+        <div class="organ-name">Lungs</div>
+        <div class="organ-viability">⏱ 4 – 6 Hours</div>
+        <p class="organ-desc">One or both lungs can be donated. Lung recipients can breathe freely again after suffering from cystic fibrosis, COPD, or pulmonary fibrosis.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">4 – 6 hrs</span></div>
+          <div class="fact-row"><span class="fact-key">Can Donate</span><span class="fact-val">One or Both</span></div>
+          <div class="fact-row"><span class="fact-key">Conditions Helped</span><span class="fact-val">COPD, CF, IPF</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Lungs" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+
+      <div class="organ-card" style="--accent:#2ed573;">
+        <div class="organ-icon-wrap">🟤</div>
+        <div class="organ-name">Liver</div>
+        <div class="organ-viability">⏱ 12 – 24 Hours</div>
+        <p class="organ-desc">Unique among organs — the liver can regenerate. A partial donation from a living donor is also possible, making it one of the most flexible life-saving gifts.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">12 – 24 hrs</span></div>
+          <div class="fact-row"><span class="fact-key">Living Donor?</span><span class="fact-val">✓ Yes (partial)</span></div>
+          <div class="fact-row"><span class="fact-key">Regenerates?</span><span class="fact-val">✓ Yes</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Liver" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+
+      <div class="organ-card" style="--accent:#6478ff;">
+        <div class="organ-icon-wrap">🫘</div>
+        <div class="organ-name">Kidneys</div>
+        <div class="organ-viability">⏱ Up to 72 Hours</div>
+        <p class="organ-desc">The most commonly transplanted organ. Humans have two kidneys and can live a healthy life with just one, making living donation possible.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">Up to 72 hrs</span></div>
+          <div class="fact-row"><span class="fact-key">Pair Available?</span><span class="fact-val">✓ Both</span></div>
+          <div class="fact-row"><span class="fact-key">Waitlist (India)</span><span class="fact-val">1 Lakh+</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Kidneys" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+
+      <div class="organ-card" style="--accent:#ff7846;">
+        <div class="organ-icon-wrap">🔴</div>
+        <div class="organ-name">Pancreas</div>
+        <div class="organ-viability">⏱ 12 – 24 Hours</div>
+        <p class="organ-desc">Pancreas donation can free Type-1 diabetes patients from insulin dependency entirely. Often transplanted alongside a kidney, offering dual benefits.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">12 – 24 hrs</span></div>
+          <div class="fact-row"><span class="fact-key">Helps With</span><span class="fact-val">Type-1 Diabetes</span></div>
+          <div class="fact-row"><span class="fact-key">Combo Tx?</span><span class="fact-val">✓ With Kidney</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Pancreas" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+
+      <div class="organ-card" style="--accent:#c850ff;">
+        <div class="organ-icon-wrap">👁️</div>
+        <div class="organ-name">Corneas</div>
+        <div class="organ-viability">⏱ Up to 14 Days</div>
+        <p class="organ-desc">Cornea donation restores sight to the blind. India has over 1 million people awaiting corneal transplants. Unlike solid organs, corneas can be preserved for up to two weeks.</p>
+        <div class="organ-facts">
+          <div class="fact-row"><span class="fact-key">Viability</span><span class="fact-val">Up to 14 days</span></div>
+          <div class="fact-row"><span class="fact-key">Waitlist (India)</span><span class="fact-val">1 Million+</span></div>
+          <div class="fact-row"><span class="fact-key">Restores</span><span class="fact-val">Full Vision</span></div>
+        </div>
+        <a href="searchorgan.html?organ=Corneas" class="find-donor-btn">Find Donor <span class="btn-arrow">→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ORBIT -->
+  <section class="orbit-section">
+    <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;color:var(--red);text-transform:uppercase;margin-bottom:16px;">The Ecosystem of Donation</p>
+    <h2 class="orbit-title">One Heart, <span style="color:var(--red)">Many Lives</span></h2>
+    <p class="orbit-sub">A single decision can set off a ripple of survival across multiple recipients.</p>
+    <div class="orbit-container">
+      <div class="orbit-ring orbit-ring-1"></div>
+      <div class="orbit-ring orbit-ring-2"></div>
+      <div class="orbit-core">❤️</div>
+      <span class="orbit-planet">🫘</span>
+      <span class="orbit-planet">🫁</span>
+      <span class="orbit-planet">🟤</span>
+      <span class="orbit-planet">👁️</span>
+    </div>
+    <p style="font-size:.85rem;color:rgba(255,255,255,0.35);font-weight:300;letter-spacing:.5px;text-align:center;max-width:420px;">
+      A heart, two lungs, two kidneys, a liver, a pancreas, and two corneas —<br>up to <strong style="color:#fff;">8 recipients</strong> from one registered donor.
+    </p>
+  </section>
+
+  <!-- VIABILITY TIMELINE -->
+  <section class="timeline-section" id="timeline">
+    <p style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:5px;color:var(--red);text-transform:uppercase;margin-bottom:16px;text-align:center;">Critical Windows</p>
+    <h2 class="section-title" style="margin-bottom:10px;">Organ <span>Viability</span> Timeline</h2>
+    <p class="section-sub" style="margin-bottom:50px;">Time from procurement to transplant. Every minute matters.</p>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#ff2d4b;">❤️</div>
+        <div class="tl-content">
+          <div class="tl-name">Heart</div>
+          <div class="tl-time" style="color:#ff2d4b;">4 – 6 Hours</div>
+          <div class="tl-note">Most time-critical organ. Requires dedicated air transport and pre-matched recipient on standby.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:20%;background:#ff2d4b;"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#f0a500;">🫁</div>
+        <div class="tl-content">
+          <div class="tl-name">Lungs</div>
+          <div class="tl-time" style="color:#f0a500;">4 – 6 Hours</div>
+          <div class="tl-note">Transported in specially cooled containers. Size matching with the recipient's chest cavity is essential.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:20%;background:#f0a500;"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#ff7846;">🔴</div>
+        <div class="tl-content">
+          <div class="tl-name">Pancreas</div>
+          <div class="tl-time" style="color:#ff7846;">12 – 24 Hours</div>
+          <div class="tl-note">Usually transplanted together with kidney. Blood type and size matching required for success.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:42%;background:#ff7846;"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#2ed573;">🟤</div>
+        <div class="tl-content">
+          <div class="tl-name">Liver</div>
+          <div class="tl-time" style="color:#2ed573;">12 – 24 Hours</div>
+          <div class="tl-note">The liver's ability to regenerate makes it uniquely versatile. Can be split for two recipients in some cases.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:42%;background:#2ed573;"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#6478ff;">🫘</div>
+        <div class="tl-content">
+          <div class="tl-name">Kidneys</div>
+          <div class="tl-time" style="color:#6478ff;">Up to 72 Hours</div>
+          <div class="tl-note">The longer window allows for cross-region matching. Machine perfusion can extend viability further.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:78%;background:#6478ff;"></div></div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="border-color:#c850ff;">👁️</div>
+        <div class="tl-content">
+          <div class="tl-name">Corneas</div>
+          <div class="tl-time" style="color:#c850ff;">Up to 14 Days</div>
+          <div class="tl-note">Stored in eye banks at controlled temperatures. The generous window allows wide geographic distribution.</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:100%;background:#c850ff;"></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BIG CTA BANNER -->
+ 
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    EBOD &mdash; Emergency Blood &amp; Organ Database &bull; Bhimavaram, Andhra Pradesh &bull;
+    <a href="searchorgan.html" style="color:var(--red);text-decoration:none;">Search Donors</a>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.organ-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+        card.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+      });
+    });
+
+    function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; return (b / 1048576).toFixed(1) + ' MB'; }
+  </script>
+</body>
+</html>

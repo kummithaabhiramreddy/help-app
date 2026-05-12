@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Care - HELP</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: black;
+            background-size: 400% 400%;
+            animation: gradientMove 10s ease infinite;
+            overflow-x: hidden;
+            color: white;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Modal Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: rgba(20, 20, 40, 0.95);
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            border: 2px solid rgba(0, 255, 221, 0.5);
+            box-shadow: 0 0 30px rgba(0, 255, 221, 0.3);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #00ffdd;
+            text-shadow: 0 0 10px #00ffdd;
+            font-size: 28px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #00ffdd;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(0, 255, 221, 0.4);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ffdd;
+            box-shadow: 0 0 15px rgba(0, 255, 221, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .btn-submit {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #00ffdd, #00ccff);
+            color: black;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-submit:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 221, 0.6);
+            transform: scale(1.05);
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        .toggle-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .toggle-link a {
+            color: #00ffdd;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .toggle-link a:hover {
+            color: #00ffff;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            text-align: center;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.error {
+            background: rgba(255, 75, 92, 0.2);
+            color: #ff6b7a;
+            border: 1px solid rgba(255, 75, 92, 0.5);
+            display: block;
+        }
+
+        .message.success {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.5);
+            display: block;
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 1px solid rgba(0, 255, 221, 0.2);
+        }
+
+        nav h2 {
+            letter-spacing: 2px;
+            font-size: 20px;
+        }
+
+        spam {
+            color: red;
+            font-weight: 700;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 75, 92, 0.1);
+            border: 1px solid rgba(255, 75, 92, 0.4);
+            color: #ff6b7a;
+            padding: 8px 22px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #ff6b7a;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 75, 92, 0.4);
+        }
+
+        .user-info {
+            color: #00ffdd;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-info span {
+            color: #00ffff;
+            font-weight: 700;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 90vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 50px;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            margin-top: 10px;
+            font-size: 20px;
+            opacity: 0.9;
+        }
+
+        /* Heart Animation */
+        .heart {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: #ff4b5c;
+            transform: rotate(-45deg);
+            animation: heartbeat 1s infinite;
+            bottom: 100px;
+        }
+
+        .heart::before,
+        .heart::after {
+            content: "";
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: #ff4b5c;
+            border-radius: 50%;
+        }
+
+        .heart::before {
+            top: -40px;
+        }
+
+        .heart::after {
+            left: 40px;
+        }
+
+        @keyframes heartbeat {
+            0%,
+            100% {
+                transform: rotate(-45deg) scale(1);
+            }
+
+            50% {
+                transform: rotate(-45deg) scale(1.2);
+            }
+        }
+
+        /* ECG Line */
+        .ecg {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 150px;
+        }
+
+        .ecg svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ecg path {
+            stroke: #00ccff;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: ecgMove 4s linear infinite;
+        }
+
+        @keyframes ecgMove {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* Floating Medical Icons */
+        .icon {
+            position: absolute;
+            font-size: 30px;
+            animation: float 6s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        /* Sections */
+        section {
+            padding: 80px 50px;
+            text-align: center;
+        }
+
+        section h2 {
+            font-size: 36px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px rgba(0, 255, 221, 0.3);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            margin: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            display: inline-block;
+            width: 250px;
+            transition: 0.3s;
+            border: 1px solid rgba(0, 255, 221, 0.2);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 20px #00ffff;
+            border-color: #00ffff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(0, 255, 221, 0.2);
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 15px 20px;
+                flex-wrap: wrap;
+            }
+
+            nav h2 {
+                font-size: 16px;
+                flex: 1;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 30px;
+            }
+
+            section {
+                padding: 50px 20px;
+            }
+
+            .card {
+                width: 90%;
+                margin: 15px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Main Content (Only visible after login) -->
+    <div id="mainContent" class="main-content">
+        <nav>
+            <h2><i>HE<spam>L</spam>P - HUMAN EMERGENCY LIFE PROVIDERS</i></h2>
+        </nav>
+
+        <div class="hero">
+            <h1>Your Health, Our Priority</h1>
+            <p>Advanced Medical Services with Care</p>
+
+            <div class="heartbeat"></div>
+
+            <div class="icon" style="left:10%; top:20%;">💊</div>
+            <div class="icon" style="left:85%; top:30%;">🩺</div>
+            <div class="icon" style="left:70%; top:60%;">➕</div>
+            <div class="icon" style="left:25%; top:65%;">🩸</div>
+
+            <div class="ecg">
+                <svg>
+                    <path d="M0 80 L100 80 L120 40 L140 120 L160 80 L1000 80" />
+                </svg>
+            </div>
+        </div>
+
+        <section>
+            <h2>Our Services</h2>
+            <button onclick="document.location.href='emergencycare.html'" class="card">🚑 Emergency Care</button>
+            <button onclick="document.location.href='bloodinformation.html'" class="card">🩸 Blood</button>
+            <button onclick="document.location.href='organinformation.html'" class="card">🫀 Organs</button>
+        </section>
+        <section>
+            <h2> Donor</h2>
+            <button onclick="window.location.href='form.html'" class="card">📝 Register as Donor</button>
+        </section>
+
+        <footer>
+            @ 2026 HELP - HUMAN EMERGENCY LIFE PROVIDERS
+        </footer>
+    </div>
+
+</body>
+
+</html>

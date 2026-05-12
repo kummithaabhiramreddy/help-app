@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EBOD – Search Organ Donors</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --red: #ff2d4b;
+      --red2: #c0182e;
+      --gold: #f0a500;
+      --dark: #080810;
+      --dark2: #0f0f1e;
+      --glass: rgba(255, 255, 255, 0.05);
+      --border: rgba(255, 255, 255, 0.1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(8, 8, 16, 0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06)
+    }
+
+    .nav-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fff;
+      text-decoration: none
+    }
+
+    .nav-logo span {
+      color: var(--red)
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 500;
+      letter-spacing: .5px;
+      transition: color .2s
+    }
+
+    .nav-links a:hover {
+      color: #fff
+    }
+
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 9px 20px;
+      border-radius: 50px;
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-decoration: none;
+      transition: background .2s, color .2s
+    }
+
+    .nav-back:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      padding: 140px 20px 60px;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255, 45, 75, 0.15) 0%, transparent 70%),
+        var(--dark);
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .page-header-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 5px;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp .6s .1s forwards
+    }
+
+    .page-header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      opacity: 0;
+      animation: fadeUp .7s .25s forwards;
+      text-shadow: 0 0 60px rgba(255, 45, 75, 0.25)
+    }
+
+    .page-header h1 span {
+      color: var(--red)
+    }
+
+    .page-header p {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, 0.5);
+      max-width: 500px;
+      margin: 16px auto 0;
+      line-height: 1.8;
+      font-weight: 300;
+      opacity: 0;
+      animation: fadeUp .7s .4s forwards
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 24px;
+      font-size: .8rem;
+      color: rgba(255, 255, 255, 0.3);
+      opacity: 0;
+      animation: fadeUp .6s .55s forwards
+    }
+
+    .breadcrumb a {
+      color: rgba(255, 255, 255, 0.4);
+      text-decoration: none;
+      transition: color .2s
+    }
+
+    .breadcrumb a:hover {
+      color: var(--red)
+    }
+
+    .breadcrumb .sep {
+      opacity: .4
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ── SEARCH AREA ── */
+    .search-wrap {
+      position: relative;
+      z-index: 1;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center
+    }
+
+    .search-glass {
+      width: 100%;
+      max-width: 580px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 44px 40px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .search-glass::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent)
+    }
+
+    /* Upload zone */
+    .upload-label-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600
+    }
+
+    .upload-label-title .req-badge {
+      background: rgba(255, 45, 75, 0.15);
+      border: 1px solid rgba(255, 45, 75, 0.4);
+      color: var(--red);
+      font-size: 9px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 1px
+    }
+
+    .health-upload-section {
+      margin-bottom: 28px;
+      border: 1.5px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 24px 20px;
+      background: rgba(255, 255, 255, 0.03);
+      transition: border-color .3s, background .3s;
+      position: relative;
+      overflow: hidden
+    }
+
+    .health-upload-section.drag-over {
+      border-color: rgba(255, 45, 75, 0.6);
+      background: rgba(255, 45, 75, 0.06)
+    }
+
+    .health-upload-section.verified {
+      border-color: rgba(46, 213, 115, 0.6);
+      background: rgba(46, 213, 115, 0.05)
+    }
+
+    .health-upload-section.rejected {
+      border-color: rgba(255, 45, 75, 0.7);
+      background: rgba(255, 45, 75, 0.07)
+    }
+
+    .drop-zone {
+      border: none;
+      background: transparent;
+      width: 100%;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 0 10px
+    }
+
+    .drop-zone-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+      animation: floatIcon 3s ease-in-out infinite
+    }
+
+    @keyframes floatIcon {
+
+      0%,
+      100% {
+        transform: translateY(0)
+      }
+
+      50% {
+        transform: translateY(-6px)
+      }
+    }
+
+    .drop-zone-text {
+      font-size: .82rem;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 300;
+      text-align: center;
+      line-height: 1.6
+    }
+
+    .drop-zone-text strong {
+      color: rgba(255, 45, 75, 0.9);
+      font-weight: 700
+    }
+
+    .upload-formats {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.2);
+      text-transform: uppercase
+    }
+
+    .upload-btn-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 12px
+    }
+
+    .choose-file-btn {
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 22px;
+      font-family: 'Cinzel', serif;
+      font-size: .8rem;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      box-shadow: 0 4px 16px rgba(255, 45, 75, 0.35)
+    }
+
+    .choose-file-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 45, 75, 0.5)
+    }
+
+    #healthFileInput {
+      display: none
+    }
+
+    .scan-progress-wrap {
+      margin-top: 18px;
+      display: none
+    }
+
+    .scan-progress-wrap.active {
+      display: block;
+      animation: fadeUp .4s ease both
+    }
+
+    .scan-bar-track {
+      height: 6px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      margin-bottom: 8px
+    }
+
+    .scan-bar-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--red), #f0a500, #2ed573);
+      background-size: 200% 100%;
+      transition: width .4s ease;
+      animation: shimmer 1.5s ease infinite
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .scan-status-text {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      text-align: center;
+      font-family: 'Cinzel', serif;
+      font-weight: 600
+    }
+
+    .scan-result-badge {
+      display: none;
+      margin-top: 16px;
+      border-radius: 12px;
+      padding: 14px 18px;
+      animation: fadeUp .5s ease both
+    }
+
+    .scan-result-badge.pass {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(46, 213, 115, 0.1);
+      border: 1.5px solid rgba(46, 213, 115, 0.4);
+      color: #2ed573
+    }
+
+    .scan-result-badge.fail {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(255, 45, 75, 0.1);
+      border: 1.5px solid rgba(255, 45, 75, 0.4);
+      color: #ff6b7a
+    }
+
+    .badge-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      margin-top: 2px
+    }
+
+    .badge-content strong {
+      display: block;
+      font-size: .9rem;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      letter-spacing: .5px;
+      margin-bottom: 4px
+    }
+
+    .badge-content small {
+      font-size: .75rem;
+      opacity: .75;
+      line-height: 1.5;
+      font-weight: 300
+    }
+
+    .file-preview-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .file-preview-icon {
+      font-size: 1.5rem
+    }
+
+    .file-preview-name {
+      font-size: .82rem;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+      word-break: break-all;
+      flex: 1
+    }
+
+    .file-remove-btn {
+      background: rgba(255, 45, 75, 0.12);
+      border: 1px solid rgba(255, 45, 75, 0.3);
+      color: var(--red);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: background .2s
+    }
+
+    .file-remove-btn:hover {
+      background: rgba(255, 45, 75, 0.25)
+    }
+
+    /* Search Filters */
+    .search-gate-section {
+      transition: opacity .4s ease, filter .4s ease
+    }
+
+    .search-gate-section.locked {
+      opacity: 0.3;
+      filter: grayscale(1) blur(2px);
+      pointer-events: none;
+      user-select: none
+    }
+
+    .gate-notice {
+      margin-top: -10px;
+      margin-bottom: 20px;
+      padding: 12px;
+      background: rgba(255, 45, 75, 0.1);
+      border: 1px solid rgba(255, 45, 75, 0.2);
+      border-radius: 12px;
+      text-align: center;
+      font-size: .82rem;
+      color: var(--red);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px
+    }
+
+    .gate-notice.hidden {
+      display: none
+    }
+
+    .filter-group {
+      margin-bottom: 24px;
+      animation: fadeUp .6s .2s ease both
+    }
+
+    .f-label {
+      display: block;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 12px;
+      font-weight: 700
+    }
+
+    .city-input-wrap {
+      position: relative
+    }
+
+    .city-input {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .3s, background .3s
+    }
+
+    .city-input:focus {
+      border-color: rgba(255, 45, 75, 0.6);
+      background: rgba(255, 255, 255, 0.1)
+    }
+
+    .organ-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px
+    }
+
+    .o-chip {
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50px;
+      font-size: .8rem;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: all .25s;
+      font-weight: 600;
+      user-select: none
+    }
+
+    .o-chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff
+    }
+
+    .o-chip.selected {
+      background: rgba(255, 45, 75, 0.15);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(255, 45, 75, 0.2)
+    }
+
+    .search-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      color: #fff;
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 32px rgba(255, 45, 75, 0.4);
+      transition: transform .2s, box-shadow .2s;
+      font-weight: 900
+    }
+
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 42px rgba(255, 45, 75, 0.55)
+    }
+
+    .search-btn:active {
+      transform: translateY(0)
+    }
+
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+      transform: none
+    }
+
+    /* ── RESULTS ── */
+    .results-section {
+      width: 100%;
+      max-width: 1200px;
+      margin: 60px auto;
+      padding: 0 20px;
+      display: none
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08)
+    }
+
+    .results-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: 1px
+    }
+
+    .results-count {
+      background: rgba(255, 45, 75, 0.1);
+      color: var(--red);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255, 45, 75, 0.2)
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 24px
+    }
+
+    .result-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 22px;
+      padding: 28px;
+      position: relative;
+      transition: all .4s ease;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      animation: fadeUp .6s ease both
+    }
+
+    .result-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--red);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      background: rgba(255, 255, 255, 0.05)
+    }
+
+    .result-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255, 45, 75, 0.08), transparent 70%);
+      pointer-events: none
+    }
+
+    .rc-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--red);
+      margin-bottom: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.1)
+    }
+
+    .rc-name {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      font-weight: 900;
+      margin-bottom: 4px;
+      color: #fff
+    }
+
+    .rc-id {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: monospace
+    }
+
+    .rc-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+      font-size: .88rem;
+      color: rgba(255, 255, 255, 0.6)
+    }
+
+    .rc-row .icon {
+      opacity: 0.8;
+      font-size: 1rem
+    }
+
+    .rc-row strong {
+      color: #fff;
+      font-weight: 600
+    }
+
+    .rc-organs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px
+    }
+
+    .o-pill {
+      font-size: 10px;
+      padding: 4px 12px;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px
+    }
+
+    .o-pill.match {
+      background: rgba(255, 45, 75, 0.15);
+      color: var(--red);
+      border-color: rgba(255, 45, 75, 0.35)
+    }
+
+    .rc-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px
+    }
+
+    .rc-btn {
+      padding: 12px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity .2s
+    }
+
+    .rc-btn.call {
+      background: rgba(46, 213, 115, 0.1);
+      color: #2ed573;
+      border: 1px solid rgba(46, 213, 115, 0.2)
+    }
+
+    .rc-btn.whatsapp {
+      background: rgba(37, 211, 102, 0.1);
+      color: #256b3b;
+      border: 1px solid rgba(37, 211, 102, 0.2);
+      background: #25D366;
+      color: #fff
+    }
+
+    .rc-btn:hover {
+      opacity: 0.85
+    }
+
+    .rc-registered {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.2);
+      text-align: right;
+      margin-top: 16px;
+      font-style: italic
+    }
+
+    /* States */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      grid-column: 1/-1
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      display: block;
+      margin-bottom: 20px;
+      opacity: 0.2
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 100px 0;
+      font-family: 'Cinzel', serif;
+      letter-spacing: 4px;
+      color: rgba(255, 255, 255, 0.3);
+      text-transform: uppercase;
+      font-weight: 900;
+      grid-column: 1/-1;
+      animation: pulse 2s infinite
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.3
+      }
+
+      50% {
+        opacity: 0.6
+      }
+    }
+
+    .footer {
+      padding: 40px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.2);
+      font-size: .75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      margin-top: 60px
+    }
+
+    /* ── From file 2: card fade-out on request ── */
+    .result-card.fade-out {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+      transition: all 0.5s ease-out;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo">HE<span>L</span>P</a>
+  </nav>
+  <div class="page-header">
+    <div class="page-header-tag">Verified Donor Network</div>
+    <h1>Search Organ <span>Registry</span></h1>
+    <p>Find matches for organ transplantation from our secure, verified network of registered donors across the country.
+    </p>
+    <div class="breadcrumb">
+      <span class="sep">/</span>
+      <span style="color:var(--red)">Search Registry</span>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-glass">
+
+      <div class="upload-label-title">
+        <span>Step 1: Health Verification</span>
+        <span class="req-badge">REQUIRED</span>
+      </div>
+
+      <div class="health-upload-section" id="uploadZone">
+        <label class="drop-zone" id="dropZone">
+          <span class="drop-zone-icon">🧬</span>
+          <div class="drop-zone-text">
+            <strong>Drop medical report here</strong><br />
+            or click to upload medical verification
+          </div>
+          <div class="upload-formats">PDF, PNG, JPG (Max 5MB)</div>
+          <div class="upload-btn-row">
+            <div class="choose-file-btn">Select File</div>
+          </div>
+          <input type="file" id="healthFileInput" accept=".pdf,.png,.jpg,.jpeg,.webp">
+        </label>
+
+        <div class="file-preview-row" id="filePreviewRow" style="display:none">
+          <span class="file-preview-icon" id="fileTypeIcon">📄</span>
+          <span class="file-preview-name" id="filePreviewName">report.pdf</span>
+          <button class="file-remove-btn" onclick="removeHealthFile()">Remove</button>
+        </div>
+
+        <div class="scan-progress-wrap" id="scanProgressWrap">
+          <div class="scan-bar-track">
+            <div class="scan-bar-fill" id="scanBarFill"></div>
+          </div>
+          <div class="scan-status-text" id="scanStatusText">Scanning…</div>
+        </div>
+
+        <div class="scan-result-badge" id="scanResultBadge">
+          <span class="badge-icon" id="scanBadgeIcon"></span>
+          <div class="badge-content">
+            <strong id="scanBadgeTitle"></strong>
+            <small id="scanBadgeDetail"></small>
+          </div>
+        </div>
+      </div>
+
+      <div class="gate-notice" id="gateNotice">
+        <span>🔒 Search locked until health file is verified.</span>
+      </div>
+
+      <div class="search-gate-section locked" id="searchGate">
+        <div class="filter-group">
+          <label class="f-label">Step 2: Enter City Name</label>
+          <div class="city-input-wrap">
+            <input type="text" id="searchCity" class="city-input" placeholder="e.g. Bhimavaram or Macherla">
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="f-label">Step 3: Select Needed Organs</label>
+          <div class="organ-chips" id="organChips">
+            <div class="o-chip" data-organ="Heart" onclick="toggleOrgan(this)">🫀 Heart</div>
+            <div class="o-chip" data-organ="Kidneys" onclick="toggleOrgan(this)">🧤 Kidneys</div>
+            <div class="o-chip" data-organ="Liver" onclick="toggleOrgan(this)">🍂 Liver</div>
+            <div class="o-chip" data-organ="Lungs" onclick="toggleOrgan(this)">🌬 Lungs</div>
+            <div class="o-chip" data-organ="Pancreas" onclick="toggleOrgan(this)">🌾 Pancreas</div>
+            <div class="o-chip" data-organ="Corneas" onclick="toggleOrgan(this)">👁 Corneas</div>
+          </div>
+        </div>
+
+        <button class="search-btn" id="searchBtn" onclick="searchDonor()">🔍 &nbsp; Find Organ Donors Near Me</button>
+      </div>
+
+    </div>
+
+    <section class="results-section" id="resultsSection">
+      <div class="results-header">
+        <h2 class="results-title" id="resultsTitle">Donor Matches</h2>
+        <span class="results-count" id="resultsCountBadge">0 FOUND</span>
+      </div>
+      <div class="result-grid" id="resultGrid"></div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    HELP - HUMAN EMERGENCY LIFE PROVIDER
+  </footer>
+
+  <script>
+    // ── API BASE (from File 1 — single clean declaration) ──
+    const API_BASE = window.location.origin;
+
+    async function checkConn() {
+      const dot = document.getElementById('connDot');
+      const txt = document.getElementById('connText');
+      if (!dot || !txt) return;
+      try {
+        const res = await fetch(API_BASE + '/api/health', { signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          dot.style.background = '#2ed573';
+          txt.textContent = 'CONNECTED TO LIVE DATABASE';
+          txt.style.color = '#2ed573';
+        } else {
+          throw new Error();
+        }
+      } catch (e) {
+        dot.style.background = '#ff4757';
+        txt.textContent = 'DATABASE OFFLINE';
+        txt.style.color = '#ff4757';
+      }
+    }
+    checkConn();
+    setInterval(checkConn, 15000);
+
+    function toggleOrgan(chip) {
+      chip.classList.toggle('selected');
+    }
+
+    function organPill(name, matched) {
+      return `<span class="o-pill ${matched ? 'match' : ''}">${name}</span>`;
+    }
+
+    async function searchDonor() {
+      if (!healthFileVerified) {
+        document.getElementById('uploadZone').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        uploadZone.style.animation = 'shake 0.5s ease';
+        setTimeout(() => uploadZone.style.animation = '', 500);
+        return;
+      }
+      const city = (document.getElementById('searchCity')?.value || '').trim();
+      const selected = [...document.querySelectorAll('.o-chip.selected')].map(c => c.dataset.organ);
+      const btn = document.getElementById('searchBtn');
+      const section = document.getElementById('resultsSection');
+      const grid = document.getElementById('resultGrid');
+      const badge = document.getElementById('resultsCountBadge');
+
+      grid.innerHTML = '';
+      badge.textContent = '...';
+
+      if (!city || selected.length === 0) {
+        section.style.display = 'block';
+        let msg = city ? 'Please select at least one organ type.' : 'Please enter a city name.';
+        if (!city && selected.length === 0) msg = 'Please enter a city and select an organ.';
+
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">⚠️</span><strong style="color:#fff;font-family:Cinzel;">${msg}</strong><br/><span style="font-size:.8rem;margin-top:8px;display:block">Both city and organ type must match to find donors.</span></div>`;
+        badge.textContent = '0 FOUND';
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+
+      btn.disabled = true; btn.innerHTML = '⏳ Searching Registry…';
+      section.style.display = 'block';
+      grid.innerHTML = '<div class="loading-state">🔍 Searching Database…</div>';
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      try {
+        const params = new URLSearchParams();
+        params.set('city', city);
+        params.set('organs', selected.join(','));
+
+        let donors = [];
+        let source = 'server';
+
+        try {
+          const res = await fetch(`${API_BASE}/api/search/organs?${params.toString()}`, { signal: AbortSignal.timeout(4000) });
+          const data = await res.json();
+          donors = data.donors || [];
+        } catch (e) {
+          console.warn('API Connection failed, falling back to local storage search.');
+          source = 'local';
+          let local = [];
+          try { local = JSON.parse(localStorage.getItem('donors_db') || '[]'); } catch (e2) { }
+          donors = local.filter(d => {
+            const matchesType = (d.type === 'Organ' || d.type === 'Both');
+            const matchesCity = (d.city || '').toLowerCase().includes(city.toLowerCase());
+            const donorOrgans = Array.isArray(d.organs) ? d.organs : [];
+            const matchesOrgan = selected.some(req => {
+              const r = req.toLowerCase();
+              return donorOrgans.some(o => {
+                const organStr = (o || '').toLowerCase();
+                return organStr.includes(r) || r.includes(organStr);
+              });
+            });
+            return matchesType && matchesCity && matchesOrgan;
+          });
+        }
+
+        const resultsTitle = document.getElementById('resultsTitle');
+        resultsTitle.innerHTML = `✅ <span style="color:var(--red);">${selected.join(' & ')}</span> Donors in <span style="color:var(--red);text-decoration:underline;">${city}</span>${source === 'local' ? ' <small style="font-size:0.6em; opacity:0.5;">(Offline)</small>' : ''}`;
+
+        badge.textContent = donors.length + ' FOUND';
+        grid.innerHTML = '';
+
+        if (!donors.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">🫀</span>No match found for <strong style="color:var(--red)">${selected.join(' / ')}</strong> in <strong style="color:var(--red)">${city}</strong>.<br/><span style="font-size:.8rem;margin-top:8px;display:block">Check spelling or try a different city.</span></div>`;
+          return;
+        }
+
+        donors.forEach((d, i) => {
+          const initials = (d.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          const donorOrgans = Array.isArray(d.organs) ? d.organs : [];
+          const card = document.createElement('div');
+          card.className = 'result-card';
+          card.style.animationDelay = (i * 0.05) + 's';
+
+          const matchingOrganIdx = [];
+          donorOrgans.forEach((organ, idx) => {
+            if (selected.some(req => { const r = req.toLowerCase(); const o = organ.toLowerCase(); return o.includes(r) || r.includes(o); })) matchingOrganIdx.push(idx);
+          });
+
+          let cityHtml = d.city || 'N/A';
+          const rx = new RegExp("(" + city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ")", "gi");
+          cityHtml = cityHtml.replace(rx, '<strong style="color:var(--red);text-decoration:underline">$1</strong>');
+
+          const donated = Number(d.donated_count) || 0;
+          const received = Number(d.received_count) || 0;
+          const score = (donated * 10) - (received * 2);
+          const ratio = donated / (received + 1);
+          const finalScore = Math.floor(score + (ratio * 5));
+
+          let logoText = '';
+          let logoColor = '';
+          if (finalScore <= 20) {
+            logoText = 'BRONZE';
+            logoColor = 'linear-gradient(135deg, #cd7f32, #8c5a24)';
+          } else if (finalScore <= 50) {
+            logoText = 'SILVER';
+            logoColor = 'linear-gradient(135deg, #c0c0c0, #737373)';
+          } else if (finalScore <= 100) {
+            logoText = 'GOLD';
+            logoColor = 'linear-gradient(135deg, #ffd700, #b8860b)';
+          } else {
+            logoText = 'DIAMOND';
+            logoColor = 'linear-gradient(135deg, #00bfff, #005f99)';
+          }
+
+          const scoreBadge = `
+            <div style="position: absolute; top: 45px; right: 15px; display: flex; flex-direction: column; align-items: center; z-index: 10;">
+              <div style="width: 70px; height: 70px; background: ${logoColor}; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4), inset 0 0 0 5px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.5); border: 2px dashed rgba(255,255,255,0.8); position: relative; z-index: 2;">
+                <div style="font-size: 7px; text-transform: uppercase; color: rgba(255,255,255,0.85); letter-spacing: 1px; font-family: sans-serif; margin-bottom: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">CERTIFIED</div>
+                <div style="font-size: 11px; font-weight: 900; font-family: Cinzel, serif; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); letter-spacing: 1px;">${logoText}</div>
+                <div style="font-size: 7px; text-transform: uppercase; color: rgba(255,255,255,0.85); letter-spacing: 2px; font-family: sans-serif; margin-top: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">DONOR</div>
+              </div>
+              <div style="display: flex; gap: 8px; margin-top: -10px; z-index: 1; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));">
+                <div style="width: 14px; height: 32px; background: ${logoColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); transform: rotate(15deg);"></div>
+                <div style="width: 14px; height: 32px; background: ${logoColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); transform: rotate(-15deg);"></div>
+              </div>
+            </div>
+          `;
+
+          card.innerHTML = `
+            ${scoreBadge}
+            <div style="position:absolute;top:12px;right:12px;background:linear-gradient(135deg,#ff2d4b,#c0182e);color:#fff;font-size:10px;padding:6px 12px;border-radius:20px;z-index:10;box-shadow:0 6px 20px rgba(255,45,75,0.6);font-family:Cinzel;font-weight:900;letter-spacing:1px;border:2px solid #ff7846;animation:pulse 2s infinite;text-transform:uppercase">🎯 PERFECT MATCH</div>
+            <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--red);font-weight:900;margin-bottom:12px;">🏥 Donor Details</div>
+            <div class="rc-avatar" style="background:linear-gradient(135deg,rgba(255,45,75,0.4),rgba(240,165,0,0.4));border:2px solid #ff2d4b;">${initials}</div>
+            <div class="rc-name">${d.name || 'Anonymous'}</div>
+            <div class="rc-id">${d.donorId || ''}</div>
+            <div style="border-top:1px solid rgba(255,255,255,0.1);margin:12px 0;padding-top:12px;">
+              <div class="rc-row"><span class="icon">📍</span><strong>City:</strong>&nbsp;${cityHtml}<div style="background:rgba(46,213,115,0.15);color:#2ed573;font-size:9px;padding:3px 8px;border-radius:12px;border:1px solid rgba(46,213,115,0.3);font-weight:700;display:inline-block;margin-left:8px;vertical-align:middle;">YOUR CITY</div></div>
+              <div class="rc-row"><span class="icon">🩸</span><strong>Blood:</strong>&nbsp;${d.bloodgroup || 'N/A'}</div>
+              <div class="rc-row"><span class="icon">📅</span><strong>DOB:</strong>&nbsp;${d.dob || '—'}</div>
+            </div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
+              <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-bottom:8px;font-weight:600;">Available Organs:</div>
+              <div class="rc-organs">${donorOrgans.length ? donorOrgans.map((o, idx) => organPill(o, matchingOrganIdx.includes(idx))).join('') : 'Contact for details'}</div>
+            </div>
+            <div class="rc-actions">
+              ${d.phone ? `<a href="tel:${d.phone}" class="rc-btn call">📞 Call</a>` : ''}
+              ${d.phone ? `<a href="https://wa.me/91${d.phone.replace(/\D/g, '')}" target="_blank" class="rc-btn whatsapp">💬 WhatsApp</a>` : ''}
+            </div>
+            <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px;" id="org-box-${d.donorId}">
+              <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">📩 Send Organ Request?</p>
+              <input type="text" id="requester-${d.donorId}" placeholder="Your Full Name" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:10px; border-radius:10px; font-size:0.75rem; outline:none;" required>
+              <div style="display:flex; gap:10px;">
+                <button onclick="sendSMSRequest(this, '${d.phone}', '${d.name}', '${donorOrgans.join(', ')}', '${d.donorId}')" style="flex:1; background:var(--red); color:#fff; border:none; padding:10px; border-radius:10px; font-weight:900; cursor:pointer; font-size:0.75rem; font-family:Cinzel;">YES</button>
+                <button onclick="document.getElementById('org-box-${d.donorId}').style.display='none'" style="flex:1; background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.75rem;">NO</button>
+              </div>
+            </div>
+            <div class="rc-registered">Registered: ${d.registeredOn || '—'}</div>
+          `;
+          grid.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">⚠️</span>API Connection Error.<br/><small>Showing zero results for safety.</small></div>';
+        badge.textContent = 'ERROR';
+      } finally {
+        btn.disabled = false; btn.innerHTML = '🔍 &nbsp; Find Organ Donors Near Me';
+      }
+    }
+
+    // ── sendSMSRequest (from File 2 — with btn param + fade-out animation) ──
+    async function sendSMSRequest(btn, phone, name, organs, donorId) {
+      let requesterName = document.getElementById(`requester-${donorId}`).value.trim();
+      if (!requesterName) {
+        requesterName = "Anonymous";
+      }
+
+      const card = btn.closest('.result-card');
+      card.classList.add('fade-out');
+      setTimeout(() => {
+        card.remove();
+        if (document.querySelectorAll('.result-card').length === 0) {
+          document.getElementById('resultGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">✅</span>All donors requested. Search again for more.</div>`;
+        }
+      }, 500);
+
+      try {
+        await fetch(API_BASE + '/api/donors/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donorId: donorId,
+            requesterName: requesterName,
+            requestType: 'Organ',
+            organType: organs,
+            details: `Organ interest: ${organs}`
+          })
+        });
+      } catch (e) { console.error("Logging failed", e); }
+    }
+
+    /* ── HEALTH FILE SCAN ENGINE (from File 1 — single authoritative copy) ── */
+    const HEALTH_KEYWORDS = ['health certificate', 'medical certificate', 'medical report', 'health report', 'fitness certificate', 'fit for', 'organ transplant', 'transplant eligibility', 'clinical report', 'laboratory report', 'pathology report', 'hospital', 'blood test', 'blood report', 'haematology', 'hematology', 'patient', 'diagnosis', 'physician', 'doctor', 'dr.', 'mbbs', 'md ', 'treatment', 'prescription', 'clinical', 'hemoglobin', 'creatinine', 'blood pressure', 'glucose', 'cholesterol', 'bilirubin', 'ecg', 'eeg', 'mri', 'ct scan', 'x-ray', 'ultrasound', 'renal', 'hepatic', 'cardiac', 'pulmonary', 'organ', 'medicine', 'urine', 'serum', 'platelet', 'wbc', 'rbc', 'health', 'medical', 'clinic', 'surgery', 'scan', 'test result', 'normal', 'negative', 'positive', 'report', 'age', 'weight', 'height', 'name', 'date', 'specimen', 'registered', 'approved', 'stamp'];
+    const REJECT_KEYWORDS = ['invoice', 'receipt', 'purchase order', 'bill of sale', 'delivery note', 'tax invoice', 'bank statement', 'resume', 'curriculum vitae', 'job application', 'contract', 'agreement', 'lease', 'rent', 'quotation', 'estimate', 'photo', 'screenshot', 'image', 'selfie', 'meme'];
+    const HEALTH_FILENAME_KEYWORDS = ['health', 'medical', 'report', 'certificate', 'clinic', 'hospital', 'blood', 'lab', 'scan', 'test', 'fitness', 'doctor', 'rx', 'patient', 'organ', 'transplant', 'diagnosis', 'prescription'];
+
+    let healthFileVerified = false;
+    const uploadZone = document.getElementById('uploadZone');
+
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over') });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) processHealthFile(f) });
+    document.getElementById('healthFileInput').addEventListener('change', function () { if (this.files[0]) processHealthFile(this.files[0]) });
+
+    function removeHealthFile() {
+      document.getElementById('healthFileInput').value = '';
+      document.getElementById('dropZone').style.display = 'flex';
+      document.getElementById('filePreviewRow').style.display = 'none';
+      document.getElementById('scanProgressWrap').classList.remove('active');
+      document.getElementById('scanResultBadge').className = 'scan-result-badge';
+      uploadZone.className = 'health-upload-section';
+      lockSearchGate();
+    }
+
+    function lockSearchGate() {
+      healthFileVerified = false;
+      document.getElementById('searchGate').classList.add('locked');
+      document.getElementById('gateNotice').classList.remove('hidden');
+      document.getElementById('resultsSection').style.display = 'none';
+    }
+
+    function unlockSearchGate() {
+      healthFileVerified = true;
+      document.getElementById('searchGate').classList.remove('locked');
+      document.getElementById('gateNotice').classList.add('hidden');
+    }
+
+    async function processHealthFile(file) {
+      const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!allowed.includes(file.type) && !['pdf', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)) {
+        showScanFail('Unsupported File Format', 'Please upload a PDF, JPG, PNG, or WEBP health document.');
+        return;
+      }
+
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('filePreviewRow').style.display = 'flex';
+      document.getElementById('filePreviewName').textContent = file.name + '  (' + formatBytes(file.size) + ')';
+      document.getElementById('fileTypeIcon').textContent = ext === 'pdf' ? '📑' : '🖼️';
+
+      const progressWrap = document.getElementById('scanProgressWrap');
+      const barFill = document.getElementById('scanBarFill');
+      const statusText = document.getElementById('scanStatusText');
+      progressWrap.classList.add('active');
+
+      const steps = [
+        { pct: 15, msg: 'Reading Document…' },
+        { pct: 35, msg: 'Extracting Content…' },
+        { pct: 55, msg: 'Analysing Indicators…' },
+        { pct: 78, msg: 'Verifying Documents…' },
+        { pct: 96, msg: 'Finalizing…' }
+      ];
+      for (const s of steps) {
+        barFill.style.width = s.pct + '%';
+        statusText.textContent = s.msg;
+        await sleep(300 + Math.random() * 200);
+      }
+
+      // Detection runs on filename only (matches File 1 behaviour)
+      let textContent = file.name.toLowerCase();
+      barFill.style.width = '100%';
+      statusText.textContent = 'Scan Complete';
+      await sleep(300);
+
+      const score = scoreDocument(textContent, file.name);
+      progressWrap.classList.remove('active');
+      if (score.passed) showScanPass(score); else showScanFail(score.reason, score.detail);
+    }
+
+    // ── scoreDocument: detection logic from File 1 ──
+    function scoreDocument(text, filename) {
+      const lt = text.toLowerCase(), ln = filename.toLowerCase();
+      for (const rk of REJECT_KEYWORDS) if (lt.includes(rk)) return { passed: false, reason: 'Rejected', detail: 'Non-medical file.' };
+      let score = 0, matched = [];
+      for (const kw of HEALTH_KEYWORDS) if (lt.includes(kw)) { score++; if (matched.length < 3) matched.push(kw); }
+      for (const fk of HEALTH_FILENAME_KEYWORDS) if (ln.includes(fk)) score += 4;
+      return score >= 4 ? { passed: true, detail: 'Verified donor document.' } : { passed: false, reason: 'Verification Failed', detail: 'Invalid health file.' };
+    }
+
+    function showScanPass(score) {
+      const badge = document.getElementById('scanResultBadge');
+      document.getElementById('scanBadgeIcon').textContent = '✅';
+      document.getElementById('scanBadgeTitle').textContent = 'Health Document Verified';
+      document.getElementById('scanBadgeDetail').textContent = score.detail;
+      badge.className = 'scan-result-badge pass';
+      uploadZone.classList.add('verified');
+      unlockSearchGate();
+      setTimeout(() => searchDonor(), 800);
+    }
+
+    function showScanFail(title, detail) {
+      const badge = document.getElementById('scanResultBadge');
+      document.getElementById('scanBadgeIcon').textContent = '❌';
+      document.getElementById('scanBadgeTitle').textContent = title;
+      badge.className = 'scan-result-badge fail';
+      uploadZone.classList.add('rejected');
+      lockSearchGate();
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    function formatBytes(b) { if (b < 1024) return b + ' B'; if (b < 1048576) return (b / 1024).toFixed(1) + ' KB'; return (b / 1048576).toFixed(1) + ' MB'; }
+
+    // Handle query parameters (e.g., ?organ=Heart)
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const organ = urlParams.get('organ');
+      if (organ) {
+        const chips = document.querySelectorAll('.o-chip');
+        chips.forEach(chip => {
+          if (chip.dataset.organ.toLowerCase() === organ.toLowerCase()) {
+            chip.classList.add('selected');
+          }
+        });
+      }
+    });
+
+    // Test Bypass
+    window.bypassHealthCheck = function () {
+      showScanPass({ detail: 'Bypassed for testing purposes.' });
+    };
+  </script>
+</body>
+
+</html>

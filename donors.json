@@ -1,0 +1,21 @@
+[
+  {
+    "donorId":       "BHM-1A2B3C",
+    "name":          "Ravi Kumar",
+    "dob":           "01 January 2000",
+    "bloodGroup":    "B+",
+    "donationType":  "Blood",
+    "organs":        [],
+    "city":          "Bhimavaram",
+    "phone":         "9876543210",
+    "email":         "ravi@example.com",
+    "biometricToken": "fp:1k2m3n",
+    "timestamp":     1709301234567,
+    "registeredAt":  "2026-03-01T10:30:00.000Z",
+    "files": {
+      "photo":     "1709301234567-photo.jpg",
+      "healthPdf": null,
+      "biometric": null
+    }
+  }
+]

@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeLink — Admin Dashboard</title>
+  <meta name="description"
+    content="LifeLink live admin dashboard showing real-time donor registrations, blood group availability, organ pledges, and more." />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Archivo:wght@300;400;600;700;900&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0608;
+      --bg2: #110c0e;
+      --surface: #1a1015;
+      --border: rgba(220, 60, 80, 0.15);
+      --red: #e8324a;
+      --red-glow: rgba(232, 50, 74, 0.3);
+      --red-dim: rgba(232, 50, 74, 0.08);
+      --amber: #f59e0b;
+      --teal: #14b8a6;
+      --lavender: #a78bfa;
+      --text: #f0e8ea;
+      --text-dim: rgba(240, 232, 234, 0.5);
+      --text-faint: rgba(240, 232, 234, 0.25);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Archivo', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(232, 50, 74, 0.12) 0%, transparent 70%),
+        repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(232, 50, 74, 0.03) 60px, rgba(232, 50, 74, 0.03) 61px),
+        repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(232, 50, 74, 0.03) 60px, rgba(232, 50, 74, 0.03) 61px);
+    }
+
+    /* ── HEADER ─────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 48px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 6, 8, 0.85);
+      backdrop-filter: blur(20px);
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo .pulse {
+      color: var(--red);
+      animation: beat 1.2s ease infinite;
+      display: inline-block;
+    }
+
+    @keyframes beat {
+
+      0%,
+      100% {
+        transform: scale(1)
+      }
+
+      50% {
+        transform: scale(1.25)
+      }
+    }
+
+    .logo span {
+      color: var(--text-dim);
+      font-family: 'Archivo', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-left: 4px;
+    }
+
+    nav {
+      display: flex;
+      gap: 8px;
+    }
+
+    nav a {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--red);
+      background: var(--red-dim);
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--teal);
+      padding: 6px 12px;
+      border: 1px solid rgba(20, 184, 166, 0.3);
+      border-radius: 20px;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--teal);
+      border-radius: 50%;
+      animation: blink 1.5s ease infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.2
+      }
+    }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      padding: 64px 48px 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-title em {
+      color: var(--red);
+      font-style: italic;
+    }
+
+    .hero-sub {
+      margin-top: 12px;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      font-weight: 300;
+      max-width: 460px;
+      line-height: 1.6;
+    }
+
+    .timestamp {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      text-align: right;
+    }
+
+    /* ── LAYOUT ──────────────────────────────────────── */
+    main {
+      padding: 0 48px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    /* ── LOADING OVERLAY ─────────────────────────────── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      transition: opacity 0.5s;
+    }
+
+    .loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loader-pulse {
+      font-size: 3rem;
+      animation: beat 0.8s ease infinite;
+    }
+
+    .loader-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    /* ── ERROR BANNER ────────────────────────────────── */
+    .error-banner {
+      display: none;
+      background: rgba(232, 50, 74, 0.1);
+      border: 1px solid rgba(232, 50, 74, 0.4);
+      border-radius: 10px;
+      padding: 16px 24px;
+      margin: 0 48px;
+      font-size: 0.85rem;
+      color: var(--red);
+      text-align: center;
+    }
+
+    .error-banner.visible {
+      display: block;
+    }
+
+    /* ── STAT CARDS ──────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 30% 20%, var(--accent-glow, rgba(232, 50, 74, 0.08)), transparent 70%);
+      pointer-events: none;
+    }
+
+    .stat-card.teal {
+      --accent-glow: rgba(20, 184, 166, 0.1);
+    }
+
+    .stat-card.amber {
+      --accent-glow: rgba(245, 158, 11, 0.1);
+    }
+
+    .stat-card.lavender {
+      --accent-glow: rgba(167, 139, 250, 0.1);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+    }
+
+    .stat-number {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 3.5vw, 3.2rem);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-number.red {
+      color: var(--red);
+    }
+
+    .stat-number.teal {
+      color: var(--teal);
+    }
+
+    .stat-number.amber {
+      color: var(--amber);
+    }
+
+    .stat-number.lavender {
+      color: var(--lavender);
+    }
+
+    .stat-delta {
+      margin-top: 8px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .stat-icon {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      font-size: 2rem;
+      opacity: 0.12;
+    }
+
+    .progress-bar-wrap {
+      margin-top: 14px;
+    }
+
+    .progress-bar-bg {
+      background: rgba(255, 255, 255, 0.06);
+      height: 3px;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1.5s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    /* ── SECTION HEADING ─────────────────────────────── */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .section-head h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-head .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--red);
+      background: var(--red-dim);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid rgba(232, 50, 74, 0.25);
+    }
+
+    /* ── BLOOD DONORS ────────────────────────────────── */
+    .blood-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .blood-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s;
+    }
+
+    .blood-card:hover {
+      border-color: rgba(232, 50, 74, 0.5);
+      transform: scale(1.03);
+    }
+
+    .blood-type-label {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.4rem;
+      color: var(--red);
+      line-height: 1;
+      margin-bottom: 8px;
+      text-shadow: 0 0 40px var(--red-glow);
+    }
+
+    .blood-donors-count {
+      font-size: 1.4rem;
+      font-weight: 900;
+    }
+
+    .blood-donors-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .blood-bar {
+      margin-top: 12px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .blood-bar-fill {
+      height: 100%;
+      background: var(--red);
+      border-radius: 2px;
+      transition: width 1.5s cubic-bezier(.16, 1, .3, 1);
+      width: 0%;
+    }
+
+    /* ── DONATION TYPE BREAKDOWN ──────────────────────── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .type-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.25s;
+    }
+
+    .type-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .type-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .type-count {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.8rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--red);
+    }
+
+    .type-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    /* ── RECENT REGISTRATIONS TABLE ───────────────────── */
+    .admin-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .admin-table th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 14px 20px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .admin-table td {
+      padding: 16px 20px;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    .admin-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .admin-table tr:hover td {
+      background: rgba(232, 50, 74, 0.03);
+    }
+
+    .table-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-right: 10px;
+      vertical-align: middle;
+      background: rgba(232, 50, 74, 0.2);
+      color: var(--red);
+    }
+
+    .type-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+
+    .type-blood {
+      background: rgba(232, 50, 74, 0.15);
+      color: var(--red);
+      border: 1px solid rgba(232, 50, 74, 0.3);
+    }
+
+    .type-organ {
+      background: rgba(20, 184, 166, 0.12);
+      color: var(--teal);
+      border: 1px solid rgba(20, 184, 166, 0.25);
+    }
+
+    .type-both {
+      background: rgba(167, 139, 250, 0.12);
+      color: var(--lavender);
+      border: 1px solid rgba(167, 139, 250, 0.25);
+    }
+
+    .bg-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .empty-row td {
+      text-align: center;
+      color: var(--text-faint);
+      padding: 40px;
+    }
+
+    /* ── CITY DISTRIBUTION ───────────────────────────── */
+    .city-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .city-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .city-name {
+      font-size: 0.82rem;
+      min-width: 120px;
+    }
+
+    .city-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .city-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--teal), rgba(20, 184, 166, 0.4));
+      border-radius: 4px;
+      width: 0%;
+      transition: width 1.5s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    .city-count {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      margin-top: 16px;
+      padding: 28px 48px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* ── ANIMATIONS ──────────────────────────────────── */
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .stat-card,
+    .type-card,
+    .blood-card,
+    .admin-table-wrap {
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @media(max-width:700px) {
+      header {
+        padding: 16px 20px;
+      }
+
+      .hero {
+        padding: 32px 20px 24px;
+      }
+
+      main {
+        padding: 0 20px 60px;
+      }
+
+      footer {
+        padding: 20px;
+      }
+
+      nav {
+        display: none;
+      }
+
+      .error-banner {
+        margin: 0 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loader-pulse">🩸</div>
+    <div class="loader-text">Fetching live data from database…</div>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <span class="pulse">♥</span> LifeLink
+      <span>Admin Portal</span>
+    </div>
+    <nav>
+      <a href="#overview">Overview</a>
+      <a href="#blood">Blood</a>
+      <a href="#types">Types</a>
+      <a href="#recent">Recent</a>
+      <a href="#cities">Cities</a>
+    </nav>
+    <div class="live-badge">
+      <div class="live-dot"></div>LIVE DB
+    </div>
+  </header>
+
+  <!-- ERROR BANNER -->
+  <div class="error-banner" id="errorBanner">
+    ⚠️ Could not connect to database server. Make sure the server is running on port 3000.
+    <br /><small style="color:var(--text-dim)">Run: <code style="color:var(--amber)">npm start</code> in your project
+      folder</small>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <h1 class="hero-title">Live <em>Database</em><br />Dashboard</h1>
+      <p class="hero-sub">Real-time overview of donor registrations pulled directly from your PostgreSQL database.</p>
+    </div>
+    <div class="timestamp" id="syncTime">Fetching…</div>
+  </div>
+
+  <!-- MAIN -->
+  <main>
+
+    <!-- OVERVIEW STATS -->
+    <section id="overview">
+      <div class="section-head">
+        <h2>Overview</h2><span class="tag" id="totalTag">LOADING…</span>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card" id="card-total">
+          <div class="stat-icon">👥</div>
+          <div class="stat-label">Total Registered Donors</div>
+          <div class="stat-number red" id="stat-total">—</div>
+          <div class="stat-delta" id="stat-total-sub">Loading from database…</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="bar-total" style="width:0%;background:var(--red)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card teal" id="card-blood">
+          <div class="stat-icon">🩸</div>
+          <div class="stat-label">Blood Donors</div>
+          <div class="stat-number teal" id="stat-blood">—</div>
+          <div class="stat-delta" id="stat-blood-sub">Loading…</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="bar-blood" style="width:0%;background:var(--teal)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card amber" id="card-organ">
+          <div class="stat-icon">🫀</div>
+          <div class="stat-label">Organ Donors</div>
+          <div class="stat-number amber" id="stat-organ">—</div>
+          <div class="stat-delta" id="stat-organ-sub">Loading…</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="bar-organ" style="width:0%;background:var(--amber)"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card lavender" id="card-both">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Blood + Organ Donors</div>
+          <div class="stat-number lavender" id="stat-both">—</div>
+          <div class="stat-delta" id="stat-both-sub">Loading…</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="bar-both" style="width:0%;background:var(--lavender)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BLOOD DONORS BY TYPE -->
+    <section id="blood">
+      <div class="section-head">
+        <h2>Blood Donors by Group</h2><span class="tag" id="bloodTag">LOADING…</span>
+      </div>
+      <div class="blood-grid" id="bloodGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- DONATION TYPES -->
+    <section id="types">
+      <div class="section-head">
+        <h2>Donation Type Breakdown</h2><span class="tag">LIVE</span>
+      </div>
+      <div class="type-grid" id="typeGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- RECENT REGISTRATIONS -->
+    <section id="recent">
+      <div class="section-head">
+        <h2>Recent Registrations</h2><span class="tag" id="recentTag">LOADING…</span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Donor</th>
+              <th>Type</th>
+              <th>Blood Group</th>
+              <th>City</th>
+              <th>Registered On</th>
+              <th>Donor ID</th>
+            </tr>
+          </thead>
+          <tbody id="recentTableBody">
+            <tr>
+              <td colspan="6" style="text-align:center;color:var(--text-faint);padding:30px;">Loading…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CITY DISTRIBUTION -->
+    <section id="cities">
+      <div class="section-head">
+        <h2>City-wise Distribution</h2><span class="tag">TOP 20</span>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;">
+        <div class="city-list" id="cityList">
+          <div style="color:var(--text-faint);font-size:0.82rem;">Loading…</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <span>© 2026 LifeLink · Admin Dashboard v3.3.0</span>
+    <span id="footerDb">Data source: PostgreSQL</span>
+    <span>Build: <span style="color:var(--red)">LIVE-DB</span></span>
+  </footer>
+
+  <script>
+    const API = 'http://localhost:3000';
+
+    /* ── Utility ── */
+    function fmt(n) {
+      return Number(n).toLocaleString('en-IN');
+    }
+
+    function animateCount(el, target) {
+      const num = parseInt(String(target).replace(/[^0-9]/g, ''));
+      if (isNaN(num) || num < 1) { el.textContent = fmt(target || 0); return; }
+      let start = null;
+      const duration = 1200;
+      const step = (ts) => {
+        if (!start) start = ts;
+        const p = Math.min((ts - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = fmt(Math.floor(eased * num));
+        if (p < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    function setBar(id, pct) {
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) el.style.width = Math.min(pct, 100) + '%';
+      }, 300);
+    }
+
+    /* ── Blood group colour helper ── */
+    const BG_ORDER = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+
+    /* ── Type icon map ── */
+    const TYPE_ICON = {
+      'Blood': '🩸',
+      'Organ': '🫀',
+      'Both': '❤️‍🩹',
+      'blood': '🩸',
+      'organ': '🫀',
+      'both': '❤️‍🩹',
+    };
+
+    /* ── Main data fetch ── */
+    async function loadDashboard() {
+      try {
+        const [statsRes, bloodRes, typeRes, recentRes, cityRes] = await Promise.all([
+          fetch(`${API}/api/stats`),
+          fetch(`${API}/api/dashboard/blood-groups`),
+          fetch(`${API}/api/dashboard/donation-types`),
+          fetch(`${API}/api/donors/recent?limit=15`),
+          fetch(`${API}/api/dashboard/cities`),
+        ]);
+
+        if (!statsRes.ok) throw new Error('Server returned ' + statsRes.status);
+
+        const stats = await statsRes.json();
+        const blood = await bloodRes.json();
+        const types = await typeRes.json();
+        const recent = await recentRes.json();
+        const cities = await cityRes.json();
+
+        /* Hide loading overlay */
+        document.getElementById('loadingOverlay').classList.add('hidden');
+
+        /* Update sync time */
+        const now = new Date();
+        document.getElementById('syncTime').innerHTML =
+          `Last synced<br/><strong style="color:var(--text)">${now.toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })} — ${now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })} IST</strong>`;
+
+        renderStats(stats);
+        renderBloodGroups(blood.blood_group_availability || []);
+        renderTypes(types.donation_type_breakdown || []);
+        renderRecent(recent.donors || []);
+        renderCities(cities.city_wise_distribution || []);
+
+      } catch (err) {
+        console.error('Dashboard load error:', err);
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('errorBanner').classList.add('visible');
+      }
+    }
+
+    /* ── Render: Overview stats ── */
+    function renderStats(stats) {
+      const byType = {};
+      if (stats.by_type) {
+        stats.by_type.forEach(r => {
+          byType[(r.type || '').toLowerCase()] = Number(r.count);
+        });
+      }
+
+      const total = Number(stats.total_donors || 0);
+      const blood = byType['blood'] || 0;
+      const organ = byType['organ'] || 0;
+      const both = byType['both'] || 0;
+
+      document.getElementById('totalTag').textContent = fmt(total) + ' TOTAL';
+      animateCount(document.getElementById('stat-total'), total);
+      animateCount(document.getElementById('stat-blood'), blood);
+      animateCount(document.getElementById('stat-organ'), organ);
+      animateCount(document.getElementById('stat-both'), both);
+
+      document.getElementById('stat-total-sub').innerHTML = `<span style="color:var(--teal)">Live from PostgreSQL</span>`;
+      document.getElementById('stat-blood-sub').innerHTML = blood > 0 ? `${((blood / total) * 100).toFixed(1)}% of total donors` : 'No blood donors yet';
+      document.getElementById('stat-organ-sub').innerHTML = organ > 0 ? `${((organ / total) * 100).toFixed(1)}% of total donors` : 'No organ donors yet';
+      document.getElementById('stat-both-sub').innerHTML = both > 0 ? `${((both / total) * 100).toFixed(1)}% of total donors` : 'No combined donors yet';
+
+      if (total > 0) {
+        setBar('bar-total', 100);
+        setBar('bar-blood', (blood / total) * 100);
+        setBar('bar-organ', (organ / total) * 100);
+        setBar('bar-both', (both / total) * 100);
+      }
+    }
+
+    /* ── Render: Blood groups ── */
+    function renderBloodGroups(data) {
+      const grid = document.getElementById('bloodGrid');
+      grid.innerHTML = '';
+
+      /* Map into lookup */
+      const map = {};
+      data.forEach(r => { map[r.blood_group] = Number(r.donor_count); });
+
+      const maxCount = Math.max(1, ...data.map(r => Number(r.donor_count)));
+      const totalBlood = data.reduce((s, r) => s + Number(r.donor_count), 0);
+
+      document.getElementById('bloodTag').textContent = fmt(totalBlood) + ' TOTAL';
+
+      /* Render all 8 standard blood groups (0 if missing) */
+      const groups = BG_ORDER.length > 0 && data.length > 0
+        ? BG_ORDER
+        : Object.keys(map).sort();
+
+      (groups.length ? groups : Object.keys(map)).forEach(bg => {
+        const cnt = map[bg] || 0;
+        const pct = maxCount > 0 ? (cnt / maxCount) * 100 : 0;
+        const card = document.createElement('div');
+        card.className = 'blood-card';
+        card.innerHTML = `
+        <div class="blood-type-label">${bg}</div>
+        <div class="blood-donors-count">${fmt(cnt)}</div>
+        <div class="blood-donors-label">Donors</div>
+        <div class="blood-bar"><div class="blood-bar-fill" style="width:0%" data-pct="${pct.toFixed(1)}"></div></div>
+      `;
+        grid.appendChild(card);
+      });
+
+      /* Animate bars */
+      setTimeout(() => {
+        grid.querySelectorAll('.blood-bar-fill').forEach(el => {
+          el.style.width = el.dataset.pct + '%';
+        });
+      }, 300);
+    }
+
+    /* ── Render: Donation type breakdown ── */
+    function renderTypes(data) {
+      const grid = document.getElementById('typeGrid');
+      grid.innerHTML = '';
+
+      if (!data.length) {
+        grid.innerHTML = '<div style="color:var(--text-faint);font-size:0.85rem;padding:20px;">No data yet. Register donors to see the breakdown.</div>';
+        return;
+      }
+
+      data.forEach(r => {
+        const label = r.donation_type || 'Unknown';
+        const icon = TYPE_ICON[label] || '❓';
+        const cnt = Number(r.donor_count);
+
+        const card = document.createElement('div');
+        card.className = 'type-card';
+        card.innerHTML = `
+        <span class="type-icon">${icon}</span>
+        <div class="type-count">${fmt(cnt)}</div>
+        <div class="type-label">${label} Donors</div>
+      `;
+        grid.appendChild(card);
+      });
+    }
+
+    /* ── Render: Recent table ── */
+    function renderRecent(donors) {
+      const tbody = document.getElementById('recentTableBody');
+      tbody.innerHTML = '';
+
+      document.getElementById('recentTag').textContent = donors.length + ' SHOWN';
+
+      if (!donors.length) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No registrations yet. Be the first to register!</td></tr>';
+        return;
+      }
+
+      donors.forEach(d => {
+        const initials = (d.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const typeKey = (d.type || '').toLowerCase();
+        const badgeCls = typeKey === 'blood' ? 'type-blood' : typeKey === 'organ' ? 'type-organ' : 'type-both';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+        <td><span class="table-avatar">${initials}</span>${d.name || '—'}</td>
+        <td><span class="type-badge ${badgeCls}">${d.type || '—'}</span></td>
+        <td>${d.bloodgroup ? `<span class="bg-pill">${d.bloodgroup}</span>` : '<span style="color:var(--text-faint)">—</span>'}</td>
+        <td>${d.city || '—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--text-dim)">${d.registeredOn || '—'}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--text-faint)">${d.donorId || '—'}</td>
+      `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ── Render: City distribution ── */
+    function renderCities(data) {
+      const list = document.getElementById('cityList');
+      list.innerHTML = '';
+
+      if (!data.length) {
+        list.innerHTML = '<div style="color:var(--text-faint);font-size:0.82rem;">No city data available yet.</div>';
+        return;
+      }
+
+      const maxCnt = Math.max(1, ...data.map(r => Number(r.donor_count)));
+
+      data.forEach(r => {
+        const cnt = Number(r.donor_count);
+        const pct = (cnt / maxCnt) * 100;
+        const row = document.createElement('div');
+        row.className = 'city-row';
+        row.innerHTML = `
+        <span class="city-name">${r.city || 'Unknown'}</span>
+        <div class="city-bar-wrap"><div class="city-bar-fill" data-pct="${pct.toFixed(1)}"></div></div>
+        <span class="city-count">${fmt(cnt)}</span>
+      `;
+        list.appendChild(row);
+      });
+
+      setTimeout(() => {
+        list.querySelectorAll('.city-bar-fill').forEach(el => {
+          el.style.width = el.dataset.pct + '%';
+        });
+      }, 300);
+    }
+
+    /* ── Init ── */
+    loadDashboard();
+
+    /* Auto-refresh every 30 seconds */
+    setInterval(loadDashboard, 30000);
+  </script>
+</body>
+
+</html>

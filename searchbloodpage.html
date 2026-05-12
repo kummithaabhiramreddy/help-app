@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EBOD – Search Blood Donors</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --red: #e8192c;
+      --red2: #9b0f1c;
+      --dark: #06050f;
+      --dark2: #0c0b1a;
+      --border: rgba(255, 255, 255, 0.09)
+    }
+
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      background: var(--dark);
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.032'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(6, 5, 15, 0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06)
+    }
+
+    .nav-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #fff;
+      text-decoration: none
+    }
+
+    .nav-logo span {
+      color: var(--red)
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px
+    }
+
+    .nav-links a {
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: none;
+      font-size: .85rem;
+      font-weight: 500;
+      letter-spacing: .5px;
+      transition: color .2s
+    }
+
+    .nav-links a:hover {
+      color: #fff
+    }
+
+    .nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .12);
+      color: rgba(255, 255, 255, .7);
+      padding: 9px 20px;
+      border-radius: 50px;
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      text-decoration: none;
+      transition: background .2s, color .2s
+    }
+
+    .nav-back:hover {
+      background: rgba(255, 255, 255, .1);
+      color: #fff
+    }
+
+    /* PAGE HEADER */
+    .page-header {
+      padding: 140px 20px 60px;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(232, 25, 44, .18) 0%, transparent 70%), var(--dark);
+      position: relative;
+      z-index: 1;
+      text-align: center
+    }
+
+    .page-header-tag {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      letter-spacing: 5px;
+      color: var(--red);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fUp .6s .1s forwards
+    }
+
+    .page-header h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      opacity: 0;
+      animation: fUp .7s .25s forwards;
+      text-shadow: 0 0 60px rgba(232, 25, 44, .25)
+    }
+
+    .page-header h1 span {
+      color: var(--red)
+    }
+
+    .page-header p {
+      font-size: 1rem;
+      color: rgba(255, 255, 255, .5);
+      max-width: 500px;
+      margin: 16px auto 0;
+      line-height: 1.8;
+      font-weight: 300;
+      opacity: 0;
+      animation: fUp .7s .4s forwards
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 24px;
+      font-size: .8rem;
+      color: rgba(255, 255, 255, .3);
+      opacity: 0;
+      animation: fUp .6s .55s forwards
+    }
+
+    .breadcrumb a {
+      color: rgba(255, 255, 255, .4);
+      text-decoration: none;
+      transition: color .2s
+    }
+
+    .breadcrumb a:hover {
+      color: var(--red)
+    }
+
+    .breadcrumb .sep {
+      opacity: .4
+    }
+
+    @keyframes fUp {
+      from {
+        opacity: 0;
+        transform: translateY(18px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    /* ECG decoration on header */
+    .ecg-header {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      z-index: 1;
+      pointer-events: none;
+      opacity: .12
+    }
+
+    /* SEARCH AREA */
+    .search-wrap {
+      position: relative;
+      z-index: 1;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center
+    }
+
+    .search-glass {
+      width: 100%;
+      max-width: 580px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 28px;
+      padding: 44px 40px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, .5);
+      position: relative;
+      overflow: hidden
+    }
+
+    .search-glass::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--red), transparent)
+    }
+
+    .conn-badge {
+      font-size: 9px;
+      color: rgba(255, 255, 255, .4);
+      background: rgba(255, 255, 255, .05);
+      padding: 3px 10px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid rgba(255, 255, 255, .1)
+    }
+
+    .conn-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+      background: #ff6060
+    }
+
+    .reg-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(232, 25, 44, .1);
+      border: 1px solid rgba(232, 25, 44, .25);
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      margin-bottom: 28px;
+      transition: background .2s
+    }
+
+    .reg-link:hover {
+      background: rgba(232, 25, 44, .2)
+    }
+
+    .flabel {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, .38);
+      margin-bottom: 8px;
+      display: block;
+      font-weight: 700
+    }
+
+    .sfield {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(255, 255, 255, .06);
+      border: 1.5px solid rgba(255, 255, 255, .1);
+      border-radius: 11px;
+      color: #fff;
+      font-family: 'Raleway', sans-serif;
+      font-size: .88rem;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color .2s, background .2s;
+      -webkit-appearance: none;
+      appearance: none
+    }
+
+    .sfield::placeholder {
+      color: rgba(255, 255, 255, .22)
+    }
+
+    .sfield:focus {
+      border-color: rgba(232, 25, 44, .65);
+      background: rgba(255, 255, 255, .09);
+      box-shadow: 0 0 0 3px rgba(232, 25, 44, .12)
+    }
+
+    .sfield option {
+      background: #10101e
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px
+    }
+
+    .compat-hint {
+      display: none;
+      margin: -8px 0 16px;
+      padding: 9px 14px;
+      background: rgba(232, 25, 44, .08);
+      border: 1px solid rgba(232, 25, 44, .22);
+      border-radius: 10px;
+      font-size: .76rem;
+      color: rgba(255, 255, 255, .6);
+      line-height: 1.6
+    }
+
+    .compat-hint strong {
+      color: var(--red)
+    }
+
+    .search-btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, var(--red), var(--red2));
+      color: #fff;
+      font-family: 'Cinzel', serif;
+      font-size: .95rem;
+      letter-spacing: 2px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 28px rgba(232, 25, 44, .4);
+      transition: transform .2s, box-shadow .2s;
+      margin-top: 4px
+    }
+
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 38px rgba(232, 25, 44, .55)
+    }
+
+    .search-btn:active {
+      transform: translateY(0)
+    }
+
+    .export-section {
+      margin-top: 24px;
+      padding: 14px;
+      background: rgba(232, 25, 44, .06);
+      border: 1px solid rgba(232, 25, 44, .14);
+      border-radius: 12px;
+      text-align: center;
+      display: none
+    }
+
+    .export-btn {
+      background: #2196F3;
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      margin: 4px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 600;
+      transition: background .2s
+    }
+
+    .export-btn:hover {
+      background: #0b7dda
+    }
+
+    /* RESULTS */
+    .blood-results {
+      width: 100%;
+      max-width: 580px;
+      margin-top: 26px
+    }
+
+    .result-card {
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 14px;
+      text-align: left;
+      transition: box-shadow .25s, transform .15s;
+      animation: fUp .4s ease both
+    }
+
+    .result-card:hover {
+      box-shadow: 0 12px 32px rgba(0, 0, 0, .5);
+      transform: translateY(-4px)
+    }
+
+    .result-card h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      margin-bottom: 10px
+    }
+
+    .result-card p {
+      font-size: .82rem;
+      color: rgba(255, 255, 255, .56);
+      margin-bottom: 5px;
+      line-height: 1.5
+    }
+
+    .result-card p strong {
+      color: rgba(255, 255, 255, .8)
+    }
+
+    .card-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .5px;
+      transition: opacity .2s
+    }
+
+    .btn:hover {
+      opacity: .85
+    }
+
+    .call {
+      background: #2196F3;
+      color: #fff
+    }
+
+    .whatsapp {
+      background: #25D366;
+      color: #fff
+    }
+
+    #searchError {
+      color: #ff6b7a;
+      margin-top: 8px;
+      font-size: 13px
+    }
+
+    /* FOOTER */
+    .footer {
+      position: relative;
+      z-index: 1;
+      padding: 26px 20px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: .75rem;
+      color: rgba(255, 255, 255, .18);
+      font-weight: 300;
+      letter-spacing: .5px
+    }
+
+    @media(max-width:640px) {
+      nav {
+        padding: 14px 20px
+      }
+
+      .nav-links {
+        display: none
+      }
+
+      .search-glass {
+        padding: 28px 18px
+      }
+
+      .row2 {
+        grid-template-columns: 1fr
+      }
+    }
+      .result-card.fade-out {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+        transition: all 0.5s ease-out;
+        pointer-events: none;
+      }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo">HE<span>L</span>P</a>
+  </nav>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="page-header-tag">Donor Registry</div>
+    <h1>Find a Blood <span>Donor</span></h1>
+    <p>Search the EBOD registry for compatible blood donors in your city. Select your blood group for smart
+      compatibility matching.</p>
+    <div class="breadcrumb">
+      <span class="sep">/</span>
+      <span style="color:var(--red)">Search Donors</span>
+    </div>
+    <svg class="ecg-header" viewBox="0 0 1200 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <polyline fill="none" stroke="#e8192c" stroke-width="2"
+        points="0,20 70,20 90,20 100,3 112,38 122,6 138,20 190,20 270,20 290,20 300,3 312,38 322,6 338,20 390,20 470,20 490,20 500,3 512,38 522,6 538,20 590,20 670,20 690,20 700,3 712,38 722,6 738,20 790,20 870,20 890,20 900,3 912,38 922,6 938,20 990,20 1070,20 1090,20 1100,3 1112,38 1122,6 1138,20 1200,20" />
+      <animate attributeName="opacity" values="0.2;0.6;0.2" dur="1.6s" repeatCount="indefinite" />
+    </svg>
+  </div>
+
+  <!-- SEARCH AREA -->
+  <div class="search-wrap">
+    <div class="search-glass">
+
+      <!-- Header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;">
+        <h2 style="color:var(--red);margin:0;font-size:20px;letter-spacing:1px;font-family:'Cinzel',serif;">DONOR SEARCH
+        </h2>
+        <div class="conn-badge">
+          <span class="conn-dot" id="connDot"></span>
+          <span id="connText">CHECKING…</span>
+        </div>
+      </div>
+
+      <a class="reg-link" href="form.html">＋ &nbsp;Register as a Donor</a>
+
+      <div class="row2">
+        <div>
+          <label class="flabel">City</label>
+          <input type="text" id="searchCity" class="sfield" placeholder="e.g. Hyderabad">
+        </div>
+        <div>
+          <label class="flabel">Blood Group</label>
+          <select id="bloodGroup" class="sfield" onchange="updateCompatHint()">
+            <option value="">Any Blood Group</option>
+            <option>A+</option>
+            <option>A-</option>
+            <option>B+</option>
+            <option>B-</option>
+            <option>AB+</option>
+            <option>AB-</option>
+            <option>O+</option>
+            <option>O-</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="compat-hint" id="compatHint"></div>
+
+      <button class="search-btn" id="searchBtn" onclick="searchDonor()">🔍 &nbsp; Search Blood Donors</button>
+
+      <p id="searchError"></p>
+      <p id="searchScope" style="color:rgba(255,255,255,0.8);margin-top:8px;font-size:13px;"></p>
+
+      <div class="export-section" id="exportSection">
+        <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="export-btn" onclick="exportPDF()">⬇ Export PDF</button>
+      </div>
+    </div>
+
+    <div class="blood-results" id="results"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    HELP &mdash; HUMAN EMERGENCY LIFE PROVIDER &bull; Bhimavaram, Andhra Pradesh &bull;
+  </footer>
+
+  <script>
+    const COMPAT_MAP = {
+      // If Patient is X, they can receive from these Donor Groups:
+      'O+': ['O+', 'O-'],
+      'O-': ['O-'],
+      'A+': ['A+', 'A-', 'O+', 'O-'],
+      'A-': ['A-', 'O-'],
+      'B+': ['B+', 'B-', 'O+', 'O-'],
+      'B-': ['B-', 'O-'],
+      'AB+': ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-','O+', 'O-'], // Universal Recipient
+      'AB-': ['AB-', 'A-', 'B-', 'O-']
+    };
+
+    function updateCompatHint() {
+      const bg = document.getElementById('bloodGroup').value;
+      const el = document.getElementById('compatHint');
+      if (!bg) { el.style.display = 'none'; return; }
+      const g = COMPAT_MAP[bg] || [bg];
+      el.innerHTML = `🩸 Searching donors compatible with <strong>${bg}</strong>: <strong>${g.join(', ')}</strong>`;
+      el.style.display = 'block';
+    }
+
+    const API_BASE = window.location.origin;
+
+    async function checkConn() {
+      const dot = document.getElementById('connDot');
+      const txt = document.getElementById('connText');
+      try {
+        const res = await fetch(API_BASE + '/api/health', { signal: AbortSignal.timeout(3000) });
+        if (res.ok) { dot.style.background = '#2ed573'; txt.textContent = 'CONNECTED TO LIVE DATABASE'; txt.style.color = '#2ed573'; }
+        else throw new Error();
+      } catch (e) { dot.style.background = '#ff4757'; txt.textContent = 'DATABASE OFFLINE'; txt.style.color = '#ff4757'; }
+    }
+    checkConn();
+    setInterval(checkConn, 15000);
+
+    let lastResults = [];
+
+    async function searchDonor() {
+      const city = document.getElementById('searchCity').value.trim();
+      const bloodGroup = document.getElementById('bloodGroup').value;
+      const errorEl = document.getElementById('searchError');
+      const resultsEl = document.getElementById('results');
+      const exportSec = document.getElementById('exportSection');
+      const scopeEl = document.getElementById('searchScope');
+      const btn = document.getElementById('searchBtn');
+
+      errorEl.textContent = '';
+      resultsEl.innerHTML = '<p style="color:rgba(255,255,255,.4);margin-top:10px;">🔍 Searching…</p>';
+      exportSec.style.display = 'none';
+      lastResults = [];
+
+      if (!city) {
+        resultsEl.innerHTML = '<p style="color:#ff6b7a;margin-top:10px;">📍 Please enter a city name to find donors.</p>';
+        scopeEl.textContent = '';
+        return;
+      }
+
+      btn.disabled = true;
+      const groupsToSearch = bloodGroup ? (COMPAT_MAP[bloodGroup] || [bloodGroup]) : [];
+      let allDonors = [], source = 'server';
+
+      try {
+        const p = new URLSearchParams();
+        p.set('city', city);
+        if (groupsToSearch.length) p.set('bloodGroups', groupsToSearch.join(','));
+        const res = await fetch(`${API_BASE}/api/search/blood?${p.toString()}`, { signal: AbortSignal.timeout(4000) });
+        const data = await res.json();
+        allDonors = data.donors || [];
+      } catch (e) {
+        source = 'local';
+        let local = [];
+        try { local = JSON.parse(localStorage.getItem('donors_db') || '[]'); } catch (e2) { }
+        allDonors = local.filter(d => {
+          const matchesCity = (d.city || '').toLowerCase().includes(city.toLowerCase());
+          const matchesGroup = groupsToSearch.length ? groupsToSearch.includes(d.bloodgroup) : true;
+          return matchesCity && matchesGroup;
+        });
+      } finally {
+        btn.disabled = false;
+      }
+
+      lastResults = allDonors;
+      scopeEl.textContent = bloodGroup
+        ? `Compatible donors for ${bloodGroup}: ${groupsToSearch.join(', ')}${source === 'local' ? ' (offline mode)' : ''}`
+        : (source === 'local' ? `⚠️ Offline — showing ${allDonors.length} cached donor(s)` : `📊 ${allDonors.length} donor${allDonors.length === 1 ? '' : 's'} found`);
+
+      resultsEl.innerHTML = '';
+      if (!allDonors.length) {
+        resultsEl.innerHTML = `<p style="color:#ff6b7a;margin-top:10px;">❌ No donors found in "${city}"${bloodGroup ? ` with group ${bloodGroup}` : ''}.</p>`;
+        return;
+      }
+
+      exportSec.style.display = 'block';
+      allDonors.forEach((d, i) => {
+        const matchesCity = city && (d.city || '').toLowerCase().includes(city.toLowerCase());
+        let cityDisplay = d.city || 'N/A';
+        let cityBadge = '';
+        if (matchesCity) {
+          const rx = new RegExp("(" + city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ")", "gi");
+          cityDisplay = cityDisplay.replace(rx, '<strong style="color:#e8192c;text-decoration:underline">$1</strong>');
+          cityBadge = `<span style="background:rgba(37,211,102,.15);color:#25D366;font-size:10px;padding:2px 8px;border-radius:10px;border:1px solid rgba(37,211,102,.3);font-weight:700;margin-left:8px;">YOUR CITY</span>`;
+        }
+        const organsHtml = Array.isArray(d.organs) && d.organs.length ? `<p><strong>Organs:</strong> ${d.organs.join(', ')}</p>` : '';
+
+        // Calculate Donor Score
+        const donated = Number(d.donated_count) || 0;
+        const received = Number(d.received_count) || 0;
+        const score = (donated * 10) - (received * 2);
+        const ratio = donated / (received + 1);
+        const finalScore = Math.floor(score + (ratio * 5));
+
+        // Determine Rank Tier
+        let logoText = '';
+        let logoColor = '';
+        if (finalScore <= 20) {
+          logoText = 'BRONZE';
+          logoColor = 'linear-gradient(135deg, #cd7f32, #8c5a24)';
+        } else if (finalScore <= 50) {
+          logoText = 'SILVER';
+          logoColor = 'linear-gradient(135deg, #c0c0c0, #737373)';
+        } else if (finalScore <= 100) {
+          logoText = 'GOLD';
+          logoColor = 'linear-gradient(135deg, #ffd700, #b8860b)';
+        } else {
+          logoText = 'DIAMOND';
+          logoColor = 'linear-gradient(135deg, #00bfff, #005f99)';
+        }
+
+        const scoreBadge = `
+          <div style="position: absolute; top: 15px; right: 15px; display: flex; flex-direction: column; align-items: center; z-index: 10;">
+            <div style="width: 70px; height: 70px; background: ${logoColor}; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: inset 0 0 0 3px rgba(255,255,255,0.4), inset 0 0 0 5px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.5); border: 2px dashed rgba(255,255,255,0.8); position: relative; z-index: 2;">
+              <div style="font-size: 7px; text-transform: uppercase; color: rgba(255,255,255,0.85); letter-spacing: 1px; font-family: sans-serif; margin-bottom: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">CERTIFIED</div>
+              <div style="font-size: 11px; font-weight: 900; font-family: Cinzel, serif; color: #fff; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); letter-spacing: 1px;">${logoText}</div>
+              <div style="font-size: 7px; text-transform: uppercase; color: rgba(255,255,255,0.85); letter-spacing: 2px; font-family: sans-serif; margin-top: 2px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);">DONOR</div>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: -10px; z-index: 1; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.4));">
+              <div style="width: 14px; height: 32px; background: ${logoColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); transform: rotate(15deg);"></div>
+              <div style="width: 14px; height: 32px; background: ${logoColor}; clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 75%, 0 100%); transform: rotate(-15deg);"></div>
+            </div>
+          </div>
+        `;
+
+        resultsEl.innerHTML += `
+          <div class="result-card" style="animation-delay:${i * .05}s;${matchesCity ? 'border-color:rgba(37,211,102,.35);background:rgba(37,211,102,.05);' : ''}">
+            ${scoreBadge}
+            <h3>${d.name}&nbsp;<span style="font-size:.75rem;opacity:.5;font-family:monospace;">${d.donorId || ''}</span></h3>
+            <p><strong>Date of Birth:</strong> ${d.dob || 'N/A'}</p>
+            <p><strong>Blood Group:</strong> ${d.bloodgroup}</p>
+            <p><strong>Donation Type:</strong> ${d.type || 'N/A'}</p>
+            ${organsHtml}
+            <p><strong>City:</strong> ${cityDisplay}${cityBadge}</p>
+            <p><strong>Phone:</strong> ${d.phone}</p>
+            <p><strong>Email:</strong> ${d.email || 'N/A'}</p>
+            <p style="font-size:.72rem;color:rgba(255,255,255,.28);">Registered: ${d.registeredOn || d.registeredAt || 'N/A'}</p>
+            <div class="card-actions">
+              <a href="tel:${d.phone}" class="btn call">📞 Call</a>
+              <a href="https://wa.me/91${d.phone.replace(/\D/g, '')}" target="_blank" class="btn whatsapp">💬 WhatsApp</a>
+            </div>
+            <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px;" id="req-box-${d.donorId}">
+              <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600;">📩 Send Emergency Request?</p>
+              <input type="text" id="requester-${d.donorId}" placeholder="Enter Your Name" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:8px; border-radius:6px; font-size:0.75rem; outline:none;" required>
+              <div style="display:flex; gap:10px;">
+                <button onclick="sendSMSRequest(this, '${d.phone}', '${d.name}', '${d.bloodgroup}', '${d.donorId}')" style="flex:1; background:#4CAF50; color:#fff; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">YES</button>
+                <button onclick="document.getElementById('req-box-${d.donorId}').style.display='none'" style="flex:1; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">NO</button>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    async function sendSMSRequest(btn, phone, name, blood, donorId) {
+      let requesterName = document.getElementById(`requester-${donorId}`).value.trim();
+      if (!requesterName) {
+        requesterName = "Anonymous";
+      }
+
+      // Hide the card with animation
+      const card = btn.closest('.result-card');
+      card.classList.add('fade-out');
+      setTimeout(() => {
+        card.remove();
+        if (document.querySelectorAll('.result-card').length === 0) {
+          document.getElementById('results').innerHTML = `<p style="color:#ff6b7a;margin-top:20px;text-align:center;font-weight:700;">✅ All donors requested. Search again for more.</p>`;
+        }
+      }, 500);
+
+      // Log to Database in background
+      try {
+        await fetch(API_BASE + '/api/donors/request', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donorId: donorId,
+            requesterName: requesterName,
+            requestType: 'Blood',
+            bloodGroup: blood,
+            details: `Blood needed: ${blood}`
+          })
+        });
+      } catch (e) { console.error("Logging failed", e); }
+    }
+
+    function exportCSV() {
+      if (!lastResults.length) return;
+      const h = ['Donor ID', 'Name', 'DOB', 'Blood Group', 'Type', 'Organs', 'City', 'Phone', 'Email', 'Registered On'];
+      const rows = lastResults.map(d => [d.donorId || '', d.name, d.dob || '', d.bloodgroup, d.type || '', Array.isArray(d.organs) ? d.organs.join('; ') : '', d.city || '', d.phone, d.email || '', d.registeredOn || '']);
+      const csv = [h, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      a.download = 'EBOD_blood_donors.csv'; a.click();
+    }
+    function exportPDF() { window.print(); }
+
+    (function () {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const bg = p.get('bloodGroup');
+        const cityParam = p.get('city');
+        let auto = false;
+        if (bg) { document.getElementById('bloodGroup').value = bg; updateCompatHint(); auto = true; }
+        if (cityParam) { document.getElementById('searchCity').value = cityParam; auto = true; }
+        if (auto) setTimeout(searchDonor, 300);
+      } catch (e) { console.warn(e); }
+    })();
+  </script>
+</body>
+
+</html>
