@@ -1,12 +1,30 @@
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import { db } from '../db/client.js';
-import { donors, emergencyCare } from '../db/schema.js';
+import { neon } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
+import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { eq, and, or, like } from 'drizzle-orm';
-import nodemailer from 'nodemailer';
 import 'dotenv/config';
 
+// 1. Database Connection (Self-contained)
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle(sql);
+
+// 2. Schema Definitions (Self-contained)
+const donors = pgTable('donors', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(), // 'blood' or 'organ'
+  bloodGroup: text('blood_group'),
+  organType: text('organ_type'),
+  city: text('city').notNull(),
+  contact: text('contact').notNull(),
+  email: text('email'),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+// 3. Express App logic
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -25,13 +43,11 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/search/blood', async (req, res) => {
   const { city, bloodGroup } = req.query;
   try {
-    let query = db.select().from(donors);
     const conditions = [eq(donors.type, 'blood')];
-    
     if (city) conditions.push(like(donors.city, `%${city}%`));
     if (bloodGroup && bloodGroup !== 'Any Blood Group') conditions.push(eq(donors.bloodGroup, bloodGroup));
     
-    const results = await query.where(and(...conditions));
+    const results = await db.select().from(donors).where(and(...conditions));
     res.json(results);
   } catch (error) {
     res.status(500).json({ error: error.message });
