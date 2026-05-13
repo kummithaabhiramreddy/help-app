@@ -1,5 +1,7 @@
-export default function handler(req, res) {
-  res.setHeader('Content-Type', 'application/json');
-  res.setHeader('X-API-Version', 'v4.2.4');
-  res.end(JSON.stringify({ status: 'final-debug-ok', timestamp: new Date().toISOString() }));
+export default function handler(request, response) {
+  response.status(200).json({
+    body: 'v4.2.5: Express-free pure function',
+    query: request.query,
+    cookies: request.cookies,
+  });
 }
