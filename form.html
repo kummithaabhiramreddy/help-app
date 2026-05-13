@@ -1435,7 +1435,7 @@
           <span id="connText">OFFLINE</span>
         </div>
       </div>
-      <h1>Blood &amp; Organ<br>Donor Registry <small style="font-size:10px; opacity:0.5; vertical-align:middle; font-weight:400; letter-spacing:0;">v4.0.2</small></h1>
+      <h1>Blood &amp; Organ<br>Donor Registry <small style="font-size:10px; opacity:0.5; vertical-align:middle; font-weight:400; letter-spacing:0;">v4.0.3</small></h1>
 
       <p>Register today &mdash; your card will arrive in your inbox.</p>
     </div>
@@ -2204,10 +2204,15 @@
 
         try {
           // 1. SAVE TO POSTGRESQL FIRST (Highest Priority)
+          // NOTE: biometric is NOT sent to API — base64 images exceed Vercel's 4.5MB body limit.
+          // It is stored in localStorage only for local display on the donor card.
+          if (_biometricToken) {
+            localStorage.setItem('bhm_bio_' + donorId, _biometricToken);
+          }
           const payload = {
             donorId, name, dob: dobFmt, bloodgroup: bloodGroup,
             type: donationType, organ_type: selectedOrgans.join(', '), city,
-            contact: phone, email, biometric: _biometricToken || null,
+            contact: phone, email, biometric: null,
             registeredOn: issued, timestamp: Date.now()
           };
 
