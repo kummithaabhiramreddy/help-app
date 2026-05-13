@@ -75,24 +75,6 @@ app.get(['/api/ping', '/ping'], (req, res) => {
   });
 });
 
-app.get('/api/debug/columns', async (req, res) => {
-  try {
-    const db = getDb();
-    const result = await db.execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'donors'`);
-    res.json({ columns: result.rows });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-app.get('/api/debug/env', (req, res) => {
-  const url = process.env.DATABASE_URL || '';
-  const masked = url.replace(/:([^@]+)@/, ':****@');
-  const userMatch = url.match(/\/\/([^:]+):/);
-  res.json({ 
-    database_url: masked,
-    user: userMatch ? userMatch[1] : 'not found'
-  });
-});
 
 // Blood Search
 app.get(['/api/search/blood', '/search/blood'], async (req, res) => {
@@ -116,7 +98,7 @@ app.get(['/api/search/blood', '/search/blood'], async (req, res) => {
     }
     
     const db = getDb();
-    const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
+    const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.createdAt));
     
     // Parse organs JSON for the response
     const parsedResults = results.map(row => ({
@@ -151,7 +133,7 @@ app.get(['/api/search/organs', '/search/organs'], async (req, res) => {
 
 
     const db = getDb();
-    const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
+    const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.createdAt));
 
     
     const parsedResults = results.map(row => ({
@@ -181,18 +163,13 @@ app.post(['/api/register', '/register'], async (req, res) => {
     }
 
     const data = {
-      donorId: body.donorId,
       name: body.name,
-      dob: body.dob,
       bloodgroup: body.bloodgroup,
       type: body.type,
       organs: organsData,
       city: body.city,
       phone: body.contact,
-      email: body.email,
-      biometric: body.biometric,
-      registeredOn: body.registeredOn,
-      timestamp: body.timestamp || Date.now()
+      email: body.email
     };
 
     const db = getDb();
@@ -215,7 +192,7 @@ app.post(['/api/register', '/register'], async (req, res) => {
     
     res.json({ 
       success: true, 
-      donorId: newDonor ? newDonor.donorId : data.donorId 
+      message: "Donor registered successfully"
     });
 
   } catch (error) {
@@ -254,7 +231,7 @@ app.post('/api/donors/request', async (req, res) => {
 app.get('/api/donors', async (req, res) => {
   try {
     const db = getDb();
-    const results = await db.select().from(donors).orderBy(desc(donors.timestamp));
+    const results = await db.select().from(donors).orderBy(desc(donors.createdAt));
 
     const parsed = results.map(row => ({
       ...row,
@@ -375,7 +352,7 @@ app.get('/api/donors/recent', async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   try {
     const db = getDb();
-    const results = await db.select().from(donors).orderBy(desc(donors.timestamp)).limit(limit);
+    const results = await db.select().from(donors).orderBy(desc(donors.createdAt)).limit(limit);
 
     res.json({ donors: results });
   } catch (error) {

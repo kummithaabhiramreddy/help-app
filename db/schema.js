@@ -4,35 +4,15 @@ export const donors = pgTable(
   'donors',
   {
     id: serial('id').primaryKey(),
-    donorId: varchar('donorId', { length: 100 }).notNull().unique(),
     name: varchar('name', { length: 255 }).notNull(),
-    dob: varchar('dob', { length: 50 }),
-    bloodgroup: varchar('bloodgroup', { length: 10 }),
-    type: varchar('type', { length: 50 }),
-    organs: text('organs'), // JSON as text
+    type: varchar('type', { length: 50 }), // Blood, Organ, or Both
+    bloodgroup: varchar('blood_group', { length: 10 }),
+    organs: text('organ_type'), // Stores JSON array as string
     city: varchar('city', { length: 100 }),
-    phone: varchar('phone', { length: 20 }),
+    phone: varchar('contact', { length: 20 }),
     email: varchar('email', { length: 255 }),
-    biometric: text('biometric'),
-    registeredOn: varchar('registeredon', { length: 100 }),
-    timestamp: bigint('timestamp', { mode: 'number' }),
-
-    // Detailed Tracking Fields
-    donated_count: bigint('donated_count', { mode: 'number' }).default(0),
-    donated_detail: text('donated_detail'), // e.g., "Blood (O+): 1, Heart: 0"
-    received_count: bigint('received_count', { mode: 'number' }).default(0),
-    received_detail: text('received_detail'), // e.g., "Blood (O+): 3, Kidneys: 1"
-
     createdAt: timestamp('created_at').defaultNow(),
-  },
-  (table) => ({
-    emailIdx: index('idx_donors_email').on(table.email),
-    phoneIdx: index('idx_donors_phone').on(table.phone),
-    bloodGroupIdx: index('idx_donors_bloodgroup').on(table.bloodgroup),
-    typeIdx: index('idx_donors_type').on(table.type),
-    cityIdx: index('idx_donors_city').on(table.city),
-    timestampIdx: index('idx_donors_timestamp').on(table.timestamp),
-  })
+  }
 );
 
 export const emergencyRequests = pgTable(
