@@ -75,6 +75,15 @@ app.get(['/api/ping', '/ping'], (req, res) => {
   });
 });
 
+app.get('/api/debug/columns', async (req, res) => {
+  try {
+    const db = getDb();
+    const result = await db.execute(sql`SELECT column_name FROM information_schema.columns WHERE table_name = 'donors'`);
+    res.json({ columns: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Blood Search
 app.get(['/api/search/blood', '/search/blood'], async (req, res) => {
