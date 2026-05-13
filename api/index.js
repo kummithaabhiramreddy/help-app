@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, and, or, like, desc, sql } from 'drizzle-orm';
+import { eq, and, or, like, desc, sql, count } from 'drizzle-orm';
 import 'dotenv/config';
 import { donors, emergencyRequests } from '../db/schema.js';
 
@@ -151,7 +151,6 @@ app.post('/api/donors/request', async (req, res) => {
 app.get('/api/donors', async (req, res) => {
   try {
     const results = await db.select().from(donors).orderBy(desc(donors.timestamp));
-    // Parse organs for database view
     const parsed = results.map(row => ({
       ...row,
       organs: (() => { try { return JSON.parse(row.organs || '[]'); } catch (e) { return []; } })()
@@ -198,6 +197,89 @@ app.post('/api/donors/delete', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Delete Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Dashboard Analytics ---
+
+app.get('/api/stats', async (req, res) => {
+  try {
+    const totalResult = await db.select({ count: count() }).from(donors);
+    const typeResults = await db.select({ 
+      type: donors.type, 
+      count: count() 
+    }).from(donors).groupBy(donors.type);
+
+    res.json({
+      total_donors: Number(totalResult[0]?.count ?? 0),
+      by_type: typeResults
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/dashboard/blood-groups', async (req, res) => {
+  try {
+    const result = await db.select({
+      bloodgroup: donors.bloodgroup,
+      total: count(),
+    }).from(donors).groupBy(donors.bloodgroup);
+
+    res.json({
+      blood_group_availability: result.map(r => ({
+        blood_group: r.bloodgroup,
+        donor_count: Number(r.total)
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/dashboard/donation-types', async (req, res) => {
+  try {
+    const result = await db.select({
+      type: donors.type,
+      total: count(),
+    }).from(donors).groupBy(donors.type);
+
+    res.json({
+      donation_type_breakdown: result.map(r => ({
+        donation_type: r.type,
+        donor_count: Number(r.total)
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/donors/recent', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  try {
+    const results = await db.select().from(donors).orderBy(desc(donors.timestamp)).limit(limit);
+    res.json({ donors: results });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/dashboard/cities', async (req, res) => {
+  try {
+    const result = await db.select({
+      city: donors.city,
+      total: count(),
+    }).from(donors).groupBy(donors.city).orderBy(desc(count())).limit(20);
+
+    res.json({
+      city_wise_distribution: result.map(r => ({
+        city: r.city,
+        donor_count: Number(r.total)
+      }))
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
