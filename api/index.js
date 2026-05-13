@@ -32,10 +32,18 @@ app.use(bodyParser.json());
 // Health Check
 app.get('/api/health', async (req, res) => {
   try {
+    if (!process.env.DATABASE_URL) {
+      throw new Error("DATABASE_URL is missing in Vercel Environment Variables!");
+    }
     await db.select().from(donors).limit(1);
     res.json({ status: 'ok', database: 'connected' });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: error.message });
+    console.error("Database Error:", error);
+    res.status(500).json({ 
+      status: 'error', 
+      message: error.message,
+      hint: "Check Vercel Environment Variables" 
+    });
   }
 });
 
