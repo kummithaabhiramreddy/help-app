@@ -4,7 +4,7 @@ export const donors = pgTable(
   'donors',
   {
     id: serial('id').primaryKey(),
-    donorId: varchar('donorid', { length: 100 }).notNull().unique(),
+    donorId: varchar('donorId', { length: 100 }).notNull().unique(),
     name: varchar('name', { length: 255 }).notNull(),
     dob: varchar('dob', { length: 50 }),
     bloodgroup: varchar('bloodgroup', { length: 10 }),
