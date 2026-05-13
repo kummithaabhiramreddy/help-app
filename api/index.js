@@ -7,14 +7,21 @@ import { eq, and, or, like, desc, sql, count } from 'drizzle-orm';
 import 'dotenv/config';
 import { donors, emergencyRequests } from '../db/schema.js';
 
-// 1. Database Connection (Optimized for Vercel)
-const neonClient = neon(process.env.DATABASE_URL);
-const db = drizzle(neonClient);
+// 1. Database Connection (Defensive initialization)
+const getDb = () => {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is missing! Please set it in Vercel Environment Variables.");
+  }
+  const neonClient = neon(process.env.DATABASE_URL);
+  return drizzle(neonClient);
+};
 
 // 2. Express App logic
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 
 // Health Check
 app.get('/api/health', async (req, res) => {
@@ -22,7 +29,9 @@ app.get('/api/health', async (req, res) => {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL is missing in Vercel Environment Variables!");
     }
+    const db = getDb();
     const result = await db.select().from(donors).limit(1);
+
     res.json({ 
       status: 'ok', 
       database: 'connected',
@@ -142,8 +151,10 @@ app.post('/api/register', async (req, res) => {
       timestamp: body.timestamp || Date.now()
     };
 
+    const db = getDb();
     console.log("🛢️ Attempting to insert into Database...");
     const inserted = await db.insert(donors).values(data).returning();
+
     console.log("✅ Database insert returned:", inserted.length, "rows");
     const newDonor = inserted[0];
     
