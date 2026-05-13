@@ -1435,7 +1435,8 @@
           <span id="connText">OFFLINE</span>
         </div>
       </div>
-      <h1>Blood &amp; Organ<br>Donor Registry <small style="font-size:10px; opacity:0.5; vertical-align:middle; font-weight:400; letter-spacing:0;">v4.0.1</small></h1>
+      <h1>Blood &amp; Organ<br>Donor Registry <small style="font-size:10px; opacity:0.5; vertical-align:middle; font-weight:400; letter-spacing:0;">v4.0.2</small></h1>
+
       <p>Register today &mdash; your card will arrive in your inbox.</p>
     </div>
 
@@ -2218,8 +2219,10 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
-            signal: controller.signal
+            signal: controller.signal,
+            cache: 'no-store'
           });
+
           clearTimeout(timeoutId);
 
           let dbResult;
@@ -2228,8 +2231,10 @@
             dbResult = JSON.parse(resText);
           } catch (e) {
             console.error('Server returned non-JSON response:', resText);
-            throw new Error(`Server Error (${res.status}): The API returned an invalid response. Please check if the backend is live.`);
+            const snippet = (resText || '').substring(0, 150).replace(/</g, '&lt;');
+            throw new Error(`Parse Error: ${e.message}. Status: ${res.status}. Data: ${snippet}`);
           }
+
 
           if (!res.ok) throw new Error(dbResult.error || `Database save failed (${res.status})`);
           console.log('✅ SQL Save Successful:', dbResult.donorId);
