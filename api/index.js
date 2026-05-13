@@ -31,8 +31,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
 
+
+// Middleware for logging and debugging
+app.use((req, res, next) => {
+  console.log(`[API] ${req.method} ${req.url}`);
+  // Add a custom header to identify the version
+  res.setHeader('X-API-Version', 'v4.0.5-debug');
+  next();
+});
+
 // Health Check
-app.get('/api/health', async (req, res) => {
+app.get(['/api/health', '/health'], async (req, res) => {
+
   try {
     if (!process.env.DATABASE_URL) {
       throw new Error("DATABASE_URL is missing in Vercel Environment Variables!");
@@ -56,7 +66,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-app.get('/api/ping', (req, res) => {
+app.get(['/api/ping', '/ping'], (req, res) => {
+
   res.json({ 
     status: 'alive', 
     timestamp: new Date().toISOString(),
@@ -66,7 +77,8 @@ app.get('/api/ping', (req, res) => {
 
 
 // Blood Search
-app.get('/api/search/blood', async (req, res) => {
+app.get(['/api/search/blood', '/search/blood'], async (req, res) => {
+
   const { city, bloodGroup, bloodGroups } = req.query;
   try {
     const conditions = [
@@ -102,7 +114,8 @@ app.get('/api/search/blood', async (req, res) => {
 });
 
 // Organ Search
-app.get('/api/search/organs', async (req, res) => {
+app.get(['/api/search/organs', '/search/organs'], async (req, res) => {
+
   const { city, organs } = req.query;
   try {
     const conditions = [
@@ -136,7 +149,8 @@ app.get('/api/search/organs', async (req, res) => {
 });
 
 // Register Donor
-app.post('/api/register', async (req, res) => {
+app.post(['/api/register', '/register'], async (req, res) => {
+
   try {
     const body = req.body;
     console.log("📥 Incoming Registration:", body.donorId);
