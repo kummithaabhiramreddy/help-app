@@ -420,12 +420,13 @@ const server = http.createServer(async (req, res) => {
     console.log(`🔍 Blood Search Request: name="${query.name || ''}", city="${query.city || ''}", groups="${query.bloodGroups || ''}"`);
     try {
       const results = await dbRepo.searchBloodDonors(query);
-      return sendJSON(res, 200, { total: results.length, donors: results });
+      return sendJSON(res, 200, { donors: results });
     } catch (err) {
       console.error('Blood search error:', err);
       return sendJSON(res, 500, { error: 'Blood search failed.' });
     }
   }
+
 
   /* ══════════════════════════════════════════════
      GET /api/search/organs  — search organ donors
@@ -435,12 +436,13 @@ const server = http.createServer(async (req, res) => {
     console.log(`🔍 Organ Search Request: name="${query.name || ''}", city="${query.city || ''}", organs="${query.organs || ''}"`);
     try {
       const results = await dbRepo.searchOrganDonors(query);
-      return sendJSON(res, 200, { total: results.length, donors: results });
+      return sendJSON(res, 200, { donors: results });
     } catch (err) {
       console.error('Organ search error:', err);
       return sendJSON(res, 500, { error: 'Organ search failed.' });
     }
   }
+
 
   /* ══════════════════════════════════════════════
      GET /api/health  — health check
