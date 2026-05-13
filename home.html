@@ -437,46 +437,69 @@
 
 <body>
 
-    <!-- Main Content (Only visible after login) -->
-    <div id="mainContent" class="main-content">
-        <nav>
-            <h2><i>HE<spam>L</spam>P - HUMAN EMERGENCY LIFE PROVIDERS</i></h2>
-        </nav>
+  <div id="mainContent" class="main-content" style="display:none">
+    <nav>
+      <h2><i>HE<spam>L</spam>P - HUMAN EMERGENCY LIFE PROVIDERS</i></h2>
+      <div class="navbar-right">
+        <span class="user-info">Welcome, <span id="userName">User</span></span>
+        <button class="logout-btn" onclick="handleLogout()">LOGOUT</button>
+      </div>
+    </nav>
 
-        <div class="hero">
-            <h1>Your Health, Our Priority</h1>
-            <p>Advanced Medical Services with Care</p>
+    <div class="hero">
+      <h1>Your Health, Our Priority</h1>
+      <p>Advanced Medical Services with Care</p>
 
-            <div class="heartbeat"></div>
+      <div class="heartbeat"></div>
 
-            <div class="icon" style="left:10%; top:20%;">💊</div>
-            <div class="icon" style="left:85%; top:30%;">🩺</div>
-            <div class="icon" style="left:70%; top:60%;">➕</div>
-            <div class="icon" style="left:25%; top:65%;">🩸</div>
+      <div class="icon" style="left:10%; top:20%;">💊</div>
+      <div class="icon" style="left:85%; top:30%;">🩺</div>
+      <div class="icon" style="left:70%; top:60%;">➕</div>
+      <div class="icon" style="left:25%; top:65%;">🩸</div>
 
-            <div class="ecg">
-                <svg>
-                    <path d="M0 80 L100 80 L120 40 L140 120 L160 80 L1000 80" />
-                </svg>
-            </div>
-        </div>
-
-        <section>
-            <h2>Our Services</h2>
-            <button onclick="document.location.href='emergencycare.html'" class="card">🚑 Emergency Care</button>
-            <button onclick="document.location.href='bloodinformation.html'" class="card">🩸 Blood</button>
-            <button onclick="document.location.href='organinformation.html'" class="card">🫀 Organs</button>
-        </section>
-        <section>
-            <h2> Donor</h2>
-            <button onclick="window.location.href='form.html'" class="card">📝 Register as Donor</button>
-        </section>
-
-        <footer>
-            @ 2026 HELP - HUMAN EMERGENCY LIFE PROVIDERS
-        </footer>
+      <div class="ecg">
+        <svg>
+          <path d="M0 80 L100 80 L120 40 L140 120 L160 80 L1000 80" />
+        </svg>
+      </div>
     </div>
 
+    <section>
+      <h2>Our Services</h2>
+      <button onclick="document.location.href='emergencycare.html'" class="card">🚑 Emergency Care</button>
+      <button onclick="document.location.href='bloodinformation.html'" class="card">🩸 Blood Services</button>
+      <button onclick="document.location.href='organinformation.html'" class="card">🫀 Organ Registry</button>
+    </section>
+    
+    <section style="background: rgba(0, 255, 221, 0.05); border-top: 1px solid rgba(0, 255, 221, 0.1);">
+      <h2>Become a Hero</h2>
+      <p style="margin-bottom: 20px; opacity: 0.7;">Join thousands of others in saving lives through donation.</p>
+      <button onclick="window.location.href='form.html'" class="card" style="background: var(--red); border-color: var(--red);">📝 Register as Donor</button>
+    </section>
+
+    <footer>
+      @ 2026 HELP - HUMAN EMERGENCY LIFE PROVIDERS
+    </footer>
+  </div>
+
+  <script>
+    // Auth Check
+    window.addEventListener('load', () => {
+      const cu = localStorage.getItem('help_currentUser');
+      if (!cu) {
+        window.location.href = 'index.html';
+        return;
+      }
+      const user = JSON.parse(cu);
+      document.getElementById('userName').textContent = user.name.split(' ')[0];
+      document.getElementById('mainContent').style.display = 'block';
+    });
+
+    function handleLogout() {
+      localStorage.removeItem('help_currentUser');
+      window.location.href = 'index.html';
+    }
+  </script>
 </body>
 
 </html>

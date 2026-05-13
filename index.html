@@ -1078,31 +1078,28 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    /* ── STORAGE ── */
-    const STORE_KEY = 'help_accounts_v1';
-
-    function getAllAccounts() {
-      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { return {}; }
-    }
-    function saveAllAccounts(obj) {
-      localStorage.setItem(STORE_KEY, JSON.stringify(obj));
-    }
-    function getAccountByEmail(email) {
-      return getAllAccounts()[email.toLowerCase().trim()] || null;
-    }
-    function upsertAccount(data) {
-      const all = getAllAccounts();
-      all[data.email.toLowerCase().trim()] = data;
-      saveAllAccounts(all);
+  <script>
+    /* ── AUTH HELPERS ── */
+    async function apiRequest(endpoint, method = 'POST', data = null) {
+      const options = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+      };
+      if (data) options.body = JSON.stringify(data);
+      
+      try {
+        const res = await fetch(endpoint, options);
+        return await res.json();
+      } catch (e) {
+        console.error('API Error:', e);
+        return { error: 'Connection failed' };
+      }
     }
 
     /* ── INIT ── */
     window.addEventListener('load', () => {
-      // If already logged in, show dashboard immediately
       const cu = localStorage.getItem('help_currentUser');
-      if (cu) {
-        try { showDashboard(JSON.parse(cu)); } catch (e) { }
-      }
+      if (cu) window.location.href = 'home.html';
     });
 
     /* ── TAB SWITCH ── */
@@ -1111,21 +1108,6 @@
       document.getElementById('panelSignin').classList.toggle('active', tab === 'signin');
       document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
       document.getElementById('tabSignin').classList.toggle('active', tab === 'signin');
-
-      if (tab === 'signup') {
-        ['su-name', 'su-phone', 'su-email', 'su-pass'].forEach(id => {
-          const el = document.getElementById(id); if (el) el.value = '';
-          clearFieldState(id, id + '-msg');
-        });
-        document.getElementById('strengthFill').style.width = '0';
-        document.getElementById('strengthLabel').textContent = '';
-        document.getElementById('dupBar').classList.remove('show');
-      } else {
-        ['si-email', 'si-pass'].forEach(id => {
-          const el = document.getElementById(id); if (el) el.value = '';
-          clearFieldState(id, id + '-msg');
-        });
-      }
     }
 
     /* ── FIELD HELPERS ── */
@@ -1138,9 +1120,6 @@
       if (type === 'error') {
         inp.classList.add('input-error');
         if (msg) { msg.textContent = '✖ ' + message; msg.classList.add('show', 'err'); }
-      } else if (type === 'ok') {
-        inp.classList.add('input-ok');
-        if (msg && message) { msg.textContent = '✔ ' + message; msg.classList.add('show', 'ok'); }
       }
     }
     function clearFieldState(inputId, msgId) {
@@ -1148,247 +1127,54 @@
       const msg = document.getElementById(msgId); if (msg) msg.classList.remove('show', 'err', 'ok');
     }
 
-    /* ── PASSWORD STRENGTH ── */
-    function strengthScore(pw) {
-      let s = 0;
-      if (pw.length >= 6) s++;
-      if (pw.length >= 10) s++;
-      if (/[A-Z]/.test(pw)) s++;
-      if (/[0-9]/.test(pw)) s++;
-      if (/[^A-Za-z0-9]/.test(pw)) s++;
-      const levels = [
-        { pct: 0, label: '', color: 'transparent' },
-        { pct: 20, label: 'Very weak', color: '#f04e7a' },
-        { pct: 40, label: 'Weak', color: '#f0904e' },
-        { pct: 60, label: 'Fair', color: '#f0d040' },
-        { pct: 80, label: 'Strong', color: '#4ef0a0' },
-        { pct: 100, label: 'Very strong', color: '#4ef0a0' },
-      ];
-      return levels[Math.min(s, 5)];
-    }
-    function onPasswordStrength() {
-      const val = document.getElementById('su-pass').value;
-      const { pct, label, color } = strengthScore(val);
-      document.getElementById('strengthFill').style.cssText = `width:${pct}%;background:${color}`;
-      document.getElementById('strengthLabel').style.color = color;
-      document.getElementById('strengthLabel').textContent = val.length ? label : '';
-    }
-    function onFPStrength() {
-      const val = document.getElementById('fp-newpass').value;
-      const { pct, label, color } = strengthScore(val);
-      document.getElementById('fpStrengthFill').style.cssText = `width:${pct}%;background:${color}`;
-      document.getElementById('fpStrengthLabel').style.color = color;
-      document.getElementById('fpStrengthLabel').textContent = val.length ? label : '';
-    }
-
     /* ── SIGNUP ── */
-    function onSuEmailInput() {
-      const email = document.getElementById('su-email').value.trim().toLowerCase();
-      const dup = document.getElementById('dupBar');
-      if (email && getAccountByEmail(email)) {
-        dup.classList.add('show');
-        setFieldState('su-email', 'su-email-msg', 'error', 'Email already registered');
-      } else {
-        dup.classList.remove('show');
-        clearFieldState('su-email', 'su-email-msg');
-      }
-    }
-
-    function handleSignup() {
+    async function handleSignup() {
       const n = document.getElementById('su-name').value.trim();
       const ph = document.getElementById('su-phone').value.trim();
       const e = document.getElementById('su-email').value.trim();
       const pw = document.getElementById('su-pass').value;
 
-      if (!n) { setFieldState('su-name', null, 'error', ''); showToast('⚠️ Enter your full name', true); return; }
-      if (!ph) { setFieldState('su-phone', null, 'error', ''); showToast('⚠️ Enter your phone number', true); return; }
-      if (!e) { setFieldState('su-email', 'su-email-msg', 'error', 'Required'); showToast('⚠️ Enter your email', true); return; }
-      if (!pw) { showToast('⚠️ Enter a password', true); return; }
-      if (pw.length < 6) { showToast('⚠️ Password must be at least 6 characters', true); return; }
+      if (!n || !ph || !e || !pw) { showToast('⚠️ Fill all fields', true); return; }
+      if (pw.length < 6) { showToast('⚠️ Password too short', true); return; }
 
-      if (getAccountByEmail(e)) {
-        document.getElementById('dupBar').classList.add('show');
-        setFieldState('su-email', 'su-email-msg', 'error', 'Email already registered');
-        showToast('⚠️ That email is already linked to an account', true);
-        return;
+      showToast('⏳ Creating account...');
+      const res = await apiRequest('/api/auth/register', 'POST', { name: n, email: e, phone: ph, password: pw });
+
+      if (res.success) {
+        showToast('✅ Registered! Please sign in.');
+        setTimeout(() => switchTab('signin'), 1500);
+      } else {
+        showToast('❌ ' + (res.error || 'Failed'), true);
       }
-
-      const newAccount = { name: n, phone: ph, email: e.toLowerCase(), password: pw, createdAt: Date.now() };
-      upsertAccount(newAccount);
-      showToast('✅ Account created successfully! Please sign in.');
-      setTimeout(() => {
-        switchTab('signin');
-        document.getElementById('si-email').value = e;
-      }, 1500);
     }
 
     /* ── SIGNIN ── */
-    function handleSignin() {
+    async function handleSignin() {
       const e = document.getElementById('si-email').value.trim();
       const pw = document.getElementById('si-pass').value;
-      clearFieldState('si-email', 'si-email-msg');
-      clearFieldState('si-pass', 'si-pass-msg');
+      if (!e || !pw) { showToast('⚠️ Enter credentials', true); return; }
 
-      if (!e || !pw) { showToast('⚠️ Enter your email and password', true); return; }
+      showToast('⏳ Signing in...');
+      const res = await apiRequest('/api/auth/login', 'POST', { email: e, password: pw });
 
-      const acc = getAccountByEmail(e);
-      if (!acc) {
-        setFieldState('si-email', 'si-email-msg', 'error', 'No account found with this email');
-        showToast('❌ Email not registered', true);
-        return;
+      if (res.success) {
+        localStorage.setItem('help_currentUser', JSON.stringify(res.user));
+        showRedirect('Welcome back, ' + res.user.name.split(' ')[0] + '!', res.user);
+      } else {
+        showToast('❌ ' + (res.error || 'Invalid login'), true);
       }
-      if (pw !== acc.password) {
-        setFieldState('si-pass', 'si-pass-msg', 'error', 'Wrong password');
-        showToast('❌ Incorrect password', true);
-        return;
-      }
-
-      localStorage.setItem('help_currentUser', JSON.stringify(acc));
-      showRedirect('Welcome back, ' + (acc.name || 'User').split(' ')[0] + '!', acc);
     }
 
-    /* ── REDIRECT → DASHBOARD ── */
     function showRedirect(msg, user) {
-      document.getElementById('redirectMsg').innerHTML = msg + '<br><span style="font-size:0.85rem;color:var(--accent2)">Loading your emergency dashboard…</span>';
+      document.getElementById('redirectMsg').innerHTML = msg + '<br><span style="font-size:0.85rem;color:var(--accent2)">Opening dashboard...</span>';
       document.getElementById('redirectOverlay').classList.add('show');
-      setTimeout(() => {
-        window.location.href = 'home.html';
-      }, 1600);
-    }
-
-    function showDashboard(user) {
-      const firstName = (user.name || 'Responder').split(' ')[0];
-      document.getElementById('dashWelcomeMsg').textContent =
-        'You are now connected to the HELP emergency network, ' + firstName + '.';
-
-      let rows = '';
-      rows += `<div class="dash-user-row"><span>NAME</span><span>${user.name || '—'}</span></div>`;
-      rows += `<div class="dash-user-row"><span>EMAIL</span><span>${user.email || '—'}</span></div>`;
-      if (user.phone) rows += `<div class="dash-user-row"><span>PHONE</span><span>${user.phone}</span></div>`;
-      rows += `<div class="dash-user-row"><span>STATUS</span><span style="color:var(--accent2)">● Active Responder</span></div>`;
-      document.getElementById('dashUserInfo').innerHTML = rows;
-
-      document.getElementById('dashboardOverlay').classList.add('show');
+      setTimeout(() => window.location.href = 'home.html', 1600);
     }
 
     function handleLogout() {
       localStorage.removeItem('help_currentUser');
-      document.getElementById('dashboardOverlay').classList.remove('show');
-      switchTab('signin');
-      showToast('👋 Signed out successfully');
+      window.location.reload();
     }
-
-    /* ── FORGOT PASSWORD (fully local — no server needed) ── */
-    let _fpEmail = '';
-    let _fpCode = '';
-
-    function openForgotPassword() {
-      _fpEmail = ''; _fpCode = '';
-      ['fp-email', 'fp-code', 'fp-newpass', 'fp-confirmpass'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.value = '';
-        clearFieldState(id, id + '-msg');
-      });
-      document.getElementById('fpStrengthFill').style.width = '0';
-      document.getElementById('fpStrengthLabel').textContent = '';
-      document.getElementById('fpEmailPreview').style.display = 'none';
-      goFPStep(1);
-      document.getElementById('fpOverlay').classList.add('open');
-    }
-    function closeFP() {
-      document.getElementById('fpOverlay').classList.remove('open');
-    }
-
-    function goFPStep(n) {
-      [1, 2, 3].forEach(i => {
-        document.getElementById('fpStep' + i).classList.toggle('active', i === n);
-        const dot = document.getElementById('fpDot' + i);
-        const line = document.getElementById('fpLine' + i);
-        dot.classList.toggle('active', i === n);
-        dot.classList.toggle('done', i < n);
-        if (line) line.classList.toggle('done', i < n);
-      });
-    }
-
-    function handleFPStep1() {
-      const e = document.getElementById('fp-email').value.trim();
-      clearFieldState('fp-email', 'fp-email-msg');
-      if (!e) { showToast('⚠️ Enter your registered email', true); return; }
-
-      const acc = getAccountByEmail(e);
-      if (!acc) {
-        setFieldState('fp-email', 'fp-email-msg', 'error', 'No account found with this email');
-        showToast('❌ Email not registered', true);
-        return;
-      }
-
-      _fpEmail = e.toLowerCase().trim();
-      // Generate a 6-digit code locally (simulated)
-      _fpCode = String(Math.floor(100000 + Math.random() * 900000));
-
-      document.getElementById('fpEmailDisplay').textContent = _fpEmail;
-      document.getElementById('fpCodeDisplay').textContent = _fpCode;
-      document.getElementById('fpEmailPreview').style.display = 'block';
-      document.getElementById('fp-code').value = '';
-
-      showToast('📧 Reset code generated (simulated)');
-      goFPStep(2);
-    }
-
-    function handleFPStep2() {
-      const entered = document.getElementById('fp-code').value.trim();
-      clearFieldState('fp-code', 'fp-code-msg');
-      if (!entered || entered.length < 6) {
-        setFieldState('fp-code', 'fp-code-msg', 'error', 'Enter the full 6-digit code');
-        return;
-      }
-      if (entered !== _fpCode) {
-        setFieldState('fp-code', 'fp-code-msg', 'error', 'Incorrect code — check above');
-        showToast('❌ Wrong code', true);
-        return;
-      }
-      setFieldState('fp-code', 'fp-code-msg', 'ok', 'Code verified!');
-      setTimeout(() => {
-        ['fp-newpass', 'fp-confirmpass'].forEach(id => {
-          const el = document.getElementById(id); if (el) el.value = '';
-          clearFieldState(id, id + '-msg');
-        });
-        document.getElementById('fpStrengthFill').style.width = '0';
-        document.getElementById('fpStrengthLabel').textContent = '';
-        goFPStep(3);
-      }, 500);
-    }
-
-    function handleFPStep3() {
-      const np = document.getElementById('fp-newpass').value;
-      const cp = document.getElementById('fp-confirmpass').value;
-      clearFieldState('fp-newpass', 'fp-newpass-msg');
-      clearFieldState('fp-confirmpass', 'fp-confirmpass-msg');
-
-      if (!np || !cp) { showToast('⚠️ Fill in both fields', true); return; }
-      if (np.length < 6) { setFieldState('fp-newpass', 'fp-newpass-msg', 'error', 'Min. 6 characters'); return; }
-      if (np !== cp) { setFieldState('fp-confirmpass', 'fp-confirmpass-msg', 'error', 'Passwords do not match'); return; }
-
-      // Update stored password
-      const all = getAllAccounts();
-      if (all[_fpEmail]) {
-        all[_fpEmail].password = np;
-        saveAllAccounts(all);
-      }
-
-      closeFP();
-      showToast('✅ Password reset! Signing you in…');
-
-      setTimeout(() => {
-        switchTab('signin');
-        document.getElementById('si-email').value = _fpEmail;
-        document.getElementById('si-pass').value = np;
-        handleSignin();
-      }, 800);
-    }
-
-    document.getElementById('fpOverlay').addEventListener('click', e => {
-      if (e.target === document.getElementById('fpOverlay')) closeFP();
-    });
 
     /* ── TOAST ── */
     function showToast(msg, warn) {
