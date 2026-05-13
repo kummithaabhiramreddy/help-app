@@ -628,6 +628,12 @@ main {
 <script>
 /* ── CONFIG ── */
 const GOOGLE_CLIENT_ID = '440675514682-lng0e1v467junk79btos6fvdbbuht0jv.apps.googleusercontent.com';
++
++/* ── API BASE ── */
++const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
++  ? 'http://localhost:3000' 
++  : ''; // Use relative path in production (Vercel)
+
 
 /* ── STORAGE (same key as GearGo for shared accounts) ── */
 const STORE_KEY = 'geargo_accounts_v2';
@@ -920,7 +926,8 @@ async function handleFPStep1() {
   showToast('⏳ Sending reset code…');
   try {
     if (window.location.protocol === 'file:') throw new Error('Run the server at http://localhost:3005 to use this feature.');
-    const res = await fetch('http://localhost:3005/api/auth-flow/dispatch-otp', {
+    const res = await fetch(API_BASE + '/api/auth-flow/dispatch-otp', {
+
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: _fpEmail })
     });
@@ -952,7 +959,8 @@ async function handleFPStep2() {
   if (!entered || entered.length < 6) { setFieldState('fp-code','fp-code-msg','error','Enter full 6-digit code'); return; }
   showToast('⏳ Verifying…');
   try {
-    const res = await fetch('http://localhost:3005/api/auth-flow/confirm-otp', {
+    const res = await fetch(API_BASE + '/api/auth-flow/confirm-otp', {
+
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: _fpEmail, otp: entered })
     });
@@ -970,24 +978,61 @@ async function handleFPStep2() {
   } catch(err) { showToast('❌ ' + err.message, true); }
 }
 
-function handleFPStep3() {
+async function handleFPStep3() {
   const np = document.getElementById('fp-newpass').value;
   const cp = document.getElementById('fp-confirmpass').value;
+  const otp = document.getElementById('fp-code').value.trim();
+
   clearFieldState('fp-newpass','fp-newpass-msg');
   clearFieldState('fp-confirmpass','fp-confirmpass-msg');
+
   if (!np||!cp) { showToast('⚠️ Fill in both fields', true); return; }
   if (np.length < 6) { setFieldState('fp-newpass','fp-newpass-msg','error','Min. 6 characters'); return; }
   if (np !== cp)     { setFieldState('fp-confirmpass','fp-confirmpass-msg','error','Passwords do not match'); return; }
-  const all = getAllAccounts();
-  if (all[_fpEmail]) { all[_fpEmail].password = np; saveAllAccounts(all); }
-  closeFP();
-  showToast('✅ Password reset! Signing you in…');
-  setTimeout(() => {
-    switchTab('signin');
-    document.getElementById('si-email').value = _fpEmail;
-    document.getElementById('si-pass').value = np;
-  }, 800);
+
+  showToast('⏳ Updating password…');
+  try {
+    const res = await fetch(API_BASE + '/api/auth-flow/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        email: _fpEmail, 
+        otp: otp, 
+        newPassword: np 
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || 'Reset failed');
+    }
+
+    const data = await res.json();
+    if (data.success) {
+      closeFP();
+      showToast('✅ Password reset! Signing you in…');
+      
+      // Update local accounts too for consistency
+      const all = getAllAccounts();
+      if (all[_fpEmail]) { 
+        all[_fpEmail].password = np; 
+        saveAllAccounts(all); 
+      }
+
+      setTimeout(() => {
+        switchTab('signin');
+        document.getElementById('si-email').value = _fpEmail;
+        document.getElementById('si-pass').value = np;
+        handleSignin(); // Auto-sign-in
+      }, 800);
+    } else {
+      throw new Error(data.message || 'Reset failed');
+    }
+  } catch(err) {
+    showToast('❌ ' + err.message, true);
+  }
 }
+
 
 document.getElementById('fpOverlay').addEventListener('click', e => { if (e.target === document.getElementById('fpOverlay')) closeFP(); });
 

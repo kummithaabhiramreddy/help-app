@@ -68,3 +68,17 @@ export const users = pgTable(
     userEmailIdx: index('idx_users_email').on(table.email),
   })
 );
+
+export const otps = pgTable(
+  'otps',
+  {
+    id: serial('id').primaryKey(),
+    email: varchar('email', { length: 255 }).notNull(),
+    code: varchar('code', { length: 6 }).notNull(),
+    expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    otpEmailIdx: index('idx_otp_email').on(table.email),
+  })
+);

@@ -5,7 +5,8 @@ import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
 import { eq, and, or, like, desc, sql, count } from 'drizzle-orm';
 import 'dotenv/config';
-import { donors, emergencyRequests } from '../db/schema.js';
+import { donors, emergencyRequests, users, otps } from '../db/schema.js';
+
 
 // 1. Database Connection (Cached for performance)
 let cachedDb = null;
@@ -371,7 +372,121 @@ app.get('/api/dashboard/cities', async (req, res) => {
   }
 });
 
+// --- Password Reset (OTP) ---
+
+// 1. Dispatch OTP
+app.post('/api/auth-flow/dispatch-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+
+    const db = getDb();
+    
+    // Check if user exists
+    const user = await db.select().from(users).where(eq(users.email, email.toLowerCase().trim())).limit(1);
+    if (!user[0]) {
+      // For security, don't reveal if user exists, but here we can be helpful
+      return res.status(404).json({ error: 'No account found with this email' });
+    }
+
+    // Generate 6-digit code
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    // Store OTP in database
+    await db.insert(otps).values({
+      email: email.toLowerCase().trim(),
+      code: otp,
+      expiresAt
+    });
+
+    console.log(`📧 OTP generated for ${email}: ${otp} (expires in 10m)`);
+
+    // In a real app, send email here. For now, simulate success.
+    res.json({ 
+      success: true, 
+      message: 'OTP dispatched successfully',
+      simulated: true, // Tell frontend to show the code for testing
+      otp: otp 
+    });
+  } catch (error) {
+    console.error("OTP Dispatch Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 2. Confirm OTP
+app.post('/api/auth-flow/confirm-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ error: 'Email and OTP are required' });
+
+    const db = getDb();
+    const result = await db.select()
+      .from(otps)
+      .where(and(
+        eq(otps.email, email.toLowerCase().trim()),
+        eq(otps.code, otp)
+      ))
+      .orderBy(desc(otps.createdAt))
+      .limit(1);
+
+    if (!result[0]) {
+      return res.status(400).json({ error: 'Invalid or expired code' });
+    }
+
+    if (Date.now() > result[0].expiresAt) {
+      return res.status(400).json({ error: 'Code has expired' });
+    }
+
+    res.json({ success: true, message: 'OTP verified' });
+  } catch (error) {
+    console.error("OTP Confirm Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 3. Reset Password
+app.post('/api/auth-flow/reset-password', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) return res.status(400).json({ error: 'Missing required fields' });
+
+    const db = getDb();
+    
+    // Verify OTP again to be safe
+    const result = await db.select()
+      .from(otps)
+      .where(and(
+        eq(otps.email, email.toLowerCase().trim()),
+        eq(otps.code, otp)
+      ))
+      .orderBy(desc(otps.createdAt))
+      .limit(1);
+
+    if (!result[0] || Date.now() > result[0].expiresAt) {
+      return res.status(400).json({ error: 'Session expired. Please request a new code.' });
+    }
+
+    // Update user password
+    // Note: In real app, hash the password! 
+    // Here we use the same verifyPassword fallback as in server.js
+    await db.update(users)
+      .set({ password: newPassword }) // Should be hashed in production
+      .where(eq(users.email, email.toLowerCase().trim()));
+
+    // Delete the OTP
+    await db.delete(otps).where(eq(otps.email, email.toLowerCase().trim()));
+
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error("Password Reset Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Catch-all for undefined /api routes
+
 app.use((req, res) => {
   console.log(`⚠️ 404 Not Found: ${req.method} ${req.url}`);
   res.status(404).json({ 
