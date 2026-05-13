@@ -2200,8 +2200,8 @@
           // 1. SAVE TO POSTGRESQL FIRST (Highest Priority)
           const payload = {
             donorId, name, dob: dobFmt, bloodgroup: bloodGroup,
-            type: donationType, organs: selectedOrgans, city,
-            phone, email, biometric: _biometricToken || null,
+            type: donationType, organ_type: selectedOrgans.join(', '), city,
+            contact: phone, email, biometric: _biometricToken || null,
             registeredOn: issued, timestamp: Date.now()
           };
 
@@ -2209,7 +2209,7 @@
           const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
 
           console.log('📡 Saving to SQL Database...');
-          const res = await fetch(API_BASE + '/api/donors', {
+          const res = await fetch(API_BASE + '/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
