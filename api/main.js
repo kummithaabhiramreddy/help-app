@@ -36,7 +36,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use((req, res, next) => {
   console.log(`[API] ${req.method} ${req.url}`);
   // Add a custom header to identify the version
-  res.setHeader('X-API-Version', 'v4.0.5-debug');
+  res.setHeader('X-API-Version', 'v4.1.3');
   next();
 });
 
