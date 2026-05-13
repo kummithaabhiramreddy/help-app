@@ -133,8 +133,14 @@ app.post('/api/register', async (req, res) => {
       timestamp: body.timestamp || Date.now()
     };
 
-    const [newDonor] = await db.insert(donors).values(data).returning();
-    res.json({ success: true, donorId: newDonor.donorId });
+    const inserted = await db.insert(donors).values(data).returning();
+    const newDonor = inserted[0];
+    
+    res.json({ 
+      success: true, 
+      donorId: newDonor ? newDonor.donorId : data.donorId 
+    });
+
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({ error: error.message });

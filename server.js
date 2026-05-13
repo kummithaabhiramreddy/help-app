@@ -166,7 +166,7 @@ const server = http.createServer(async (req, res) => {
   /* ══════════════════════════════════════════════
      POST /api/donors  — save a new registration
   ══════════════════════════════════════════════ */
-  if (req.method === 'POST' && pathname === '/api/donors') {
+  if (req.method === 'POST' && (pathname === '/api/donors' || pathname === '/api/register')) {
     const body = await readBody(req);
     console.log(`📥 Incoming registration: type=${body.type}, donorId=${body.donorId || 'new'}`);
 

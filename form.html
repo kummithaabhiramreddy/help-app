@@ -2217,9 +2217,18 @@
           });
           clearTimeout(timeoutId);
 
-          const dbResult = await res.json();
-          if (!res.ok) throw new Error(dbResult.error || 'Database save failed');
+          let dbResult;
+          const resText = await res.text();
+          try {
+            dbResult = JSON.parse(resText);
+          } catch (e) {
+            console.error('Server returned non-JSON response:', resText);
+            throw new Error(`Server Error (${res.status}): The API returned an invalid response. Please check if the backend is live.`);
+          }
+
+          if (!res.ok) throw new Error(dbResult.error || `Database save failed (${res.status})`);
           console.log('✅ SQL Save Successful:', dbResult.donorId);
+
 
           // 2. SEND EMAIL IN BACKGROUND (Don't block the UI)
           emailjs.send('service_rt4vv9f', 'template_r03u8ta', {
