@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Blood and Organ Donor Registry System",
   "type": "module",
+  "scripts": {
+    "build": "echo 'Static build'"
+  },
   "dependencies": {
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
