@@ -84,7 +84,9 @@ app.get('/api/search/blood', async (req, res) => {
       conditions.push(eq(donors.bloodgroup, bloodGroup));
     }
     
+    const db = getDb();
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
+
     
     // Parse organs JSON for the response
     const parsedResults = results.map(row => ({
@@ -116,7 +118,9 @@ app.get('/api/search/organs', async (req, res) => {
       }
     }
 
+    const db = getDb();
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
+
     
     const parsedResults = results.map(row => ({
       ...row,
@@ -180,7 +184,9 @@ app.post('/api/register', async (req, res) => {
 app.post('/api/donors/request', async (req, res) => {
   try {
     const body = req.body;
+    const db = getDb();
     await db.insert(emergencyRequests).values({
+
       donorId: body.donorId,
       requesterName: body.requesterName,
       requestType: body.requestType,
@@ -199,7 +205,9 @@ app.post('/api/donors/request', async (req, res) => {
 // List All Donors (for Database View)
 app.get('/api/donors', async (req, res) => {
   try {
+    const db = getDb();
     const results = await db.select().from(donors).orderBy(desc(donors.timestamp));
+
     const parsed = results.map(row => ({
       ...row,
       organs: (() => { try { return JSON.parse(row.organs || '[]'); } catch (e) { return []; } })()
@@ -214,7 +222,9 @@ app.get('/api/donors', async (req, res) => {
 app.post('/api/donors/donate', async (req, res) => {
   try {
     const { donorId, type } = req.body;
+    const db = getDb();
     const donor = await db.select().from(donors).where(eq(donors.donorId, donorId)).limit(1);
+
     
     if (donor[0]) {
       let currentDetail = donor[0].donated_detail || '';
@@ -242,7 +252,9 @@ app.post('/api/donors/donate', async (req, res) => {
 app.post('/api/donors/delete', async (req, res) => {
   try {
     const { donorId } = req.body;
+    const db = getDb();
     await db.delete(donors).where(eq(donors.donorId, donorId));
+
     res.json({ success: true });
   } catch (error) {
     console.error("Delete Error:", error);
@@ -308,7 +320,9 @@ app.get('/api/dashboard/donation-types', async (req, res) => {
 app.get('/api/donors/recent', async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   try {
+    const db = getDb();
     const results = await db.select().from(donors).orderBy(desc(donors.timestamp)).limit(limit);
+
     res.json({ donors: results });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -317,7 +331,9 @@ app.get('/api/donors/recent', async (req, res) => {
 
 app.get('/api/dashboard/cities', async (req, res) => {
   try {
+    const db = getDb();
     const result = await db.select({
+
       city: donors.city,
       total: count(),
     }).from(donors).groupBy(donors.city).orderBy(sql`2 DESC`).limit(20);
