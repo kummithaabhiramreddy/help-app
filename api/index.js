@@ -39,6 +39,15 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.get('/api/ping', (req, res) => {
+  res.json({ 
+    status: 'alive', 
+    timestamp: new Date().toISOString(),
+    msg: "If you see this, Express is working correctly on Vercel!"
+  });
+});
+
+
 // Blood Search
 app.get('/api/search/blood', async (req, res) => {
   const { city, bloodGroup, bloodGroups } = req.query;
@@ -304,4 +313,15 @@ app.get('/api/dashboard/cities', async (req, res) => {
   }
 });
 
+// Catch-all for undefined /api routes
+app.use((req, res) => {
+  console.log(`⚠️ 404 Not Found: ${req.method} ${req.url}`);
+  res.status(404).json({ 
+    error: 'Route not found', 
+    method: req.method, 
+    path: req.url 
+  });
+});
+
 export default app;
+

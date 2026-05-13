@@ -449,23 +449,24 @@ const server = http.createServer(async (req, res) => {
   ══════════════════════════════════════════════ */
   if (req.method === 'GET' && pathname === '/api/health') {
     try {
-      console.log('📡 Health check: Testing DB connection...');
-      // Use a faster query for health check
-      const donors = await dbRepo.getAllDonors(); 
+      console.log('📡 Local Health check: Testing DB connection...');
+      const allDonors = await dbRepo.getAllDonors(); 
       return sendJSON(res, 200, { 
         status: 'ok', 
-        donors: donors.length, 
-        env: process.env.DATABASE_URL ? 'Prod' : 'Local'
+        database: 'connected',
+        count: allDonors.length,
+        env: 'development'
       });
     } catch (err) {
-      console.error('❌ Health check failed:', err.message);
+      console.error('❌ Local Health check failed:', err.message);
       return sendJSON(res, 500, { 
         status: 'error', 
         message: err.message,
-        hint: 'Check if DATABASE_URL is set in Vercel settings.'
+        hint: 'Ensure PostgreSQL is running locally.'
       });
     }
   }
+
 
   /* ══════════════════════════════════════════════
      GET /api/analytics  — interactive analytics dashboard
