@@ -3,7 +3,8 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, and, or, like, desc, sql, count } from 'drizzle-orm';
+import { eq, and, or, ilike, like, desc, sql, count } from 'drizzle-orm';
+
 import 'dotenv/config';
 import { donors, emergencyRequests, users, otps } from '../db/schema.js';
 
@@ -43,9 +44,11 @@ app.get('/api/health', async (req, res) => {
     res.json({ 
       status: 'ok', 
       database: 'connected',
+      version: 'v4.0.4',
       count: result.length,
       env: process.env.VERCEL ? 'production' : 'development'
     });
+
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).json({ 
