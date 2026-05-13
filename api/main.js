@@ -84,6 +84,11 @@ app.get('/api/debug/columns', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+app.get('/api/debug/env', (req, res) => {
+  const url = process.env.DATABASE_URL || '';
+  const masked = url.replace(/:([^@]+)@/, ':****@');
+  res.json({ database_url: masked });
+});
 
 // Blood Search
 app.get(['/api/search/blood', '/search/blood'], async (req, res) => {
