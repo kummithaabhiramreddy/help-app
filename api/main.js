@@ -87,7 +87,11 @@ app.get('/api/debug/columns', async (req, res) => {
 app.get('/api/debug/env', (req, res) => {
   const url = process.env.DATABASE_URL || '';
   const masked = url.replace(/:([^@]+)@/, ':****@');
-  res.json({ database_url: masked });
+  const userMatch = url.match(/\/\/([^:]+):/);
+  res.json({ 
+    database_url: masked,
+    user: userMatch ? userMatch[1] : 'not found'
+  });
 });
 
 // Blood Search
