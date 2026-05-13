@@ -71,7 +71,7 @@ app.get('/api/search/blood', async (req, res) => {
     const conditions = [
       or(eq(donors.type, 'Blood'), eq(donors.type, 'Both'))
     ];
-    if (city) conditions.push(like(donors.city, `%${city}%`));
+    if (city) conditions.push(ilike(donors.city, `%${city}%`));
     
     // Support single or multiple blood groups
     if (bloodGroups) {
@@ -86,7 +86,6 @@ app.get('/api/search/blood', async (req, res) => {
     
     const db = getDb();
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
-
     
     // Parse organs JSON for the response
     const parsedResults = results.map(row => ({
@@ -108,15 +107,16 @@ app.get('/api/search/organs', async (req, res) => {
     const conditions = [
       or(eq(donors.type, 'Organ'), eq(donors.type, 'Both'))
     ];
-    if (city) conditions.push(like(donors.city, `%${city}%`));
+    if (city) conditions.push(ilike(donors.city, `%${city}%`));
     
     if (organs) {
       const requestedOrgans = organs.split(',').map(o => o.trim()).filter(o => o);
       if (requestedOrgans.length > 0) {
-        const organConditions = requestedOrgans.map(o => like(donors.organs, `%${o}%`));
+        const organConditions = requestedOrgans.map(o => ilike(donors.organs, `%${o}%`));
         conditions.push(or(...organConditions));
       }
     }
+
 
     const db = getDb();
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
