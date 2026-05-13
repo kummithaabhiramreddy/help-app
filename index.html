@@ -1078,7 +1078,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-  <script>
     /* ── AUTH HELPERS ── */
     async function apiRequest(endpoint, method = 'POST', data = null) {
       const options = {
@@ -1184,6 +1183,133 @@
       t.classList.add('show');
       clearTimeout(t._t);
       t._t = setTimeout(() => t.classList.remove('show'), 3400);
+    }
+
+    /* ── EMAIL VALIDATION ── */
+    function onSuEmailInput() {
+      const email = document.getElementById('su-email').value.trim();
+      const msgEl = document.getElementById('su-email-msg');
+      const inputEl = document.getElementById('su-email');
+      
+      if (!email) {
+        clearFieldState('su-email', 'su-email-msg');
+        return;
+      }
+      
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      if (isValid) {
+        inputEl.classList.add('input-ok');
+        msgEl.textContent = '✓ Valid email';
+        msgEl.className = 'field-msg show ok';
+      } else {
+        inputEl.classList.add('input-error');
+        msgEl.textContent = '✖ Invalid email';
+        msgEl.className = 'field-msg show err';
+      }
+    }
+
+    /* ── PASSWORD STRENGTH ── */
+    function onPasswordStrength() {
+      const pw = document.getElementById('su-pass').value;
+      const fill = document.getElementById('strengthFill');
+      const label = document.getElementById('strengthLabel');
+      
+      let strength = 0;
+      if (pw.length >= 6) strength++;
+      if (pw.length >= 10) strength++;
+      if (/[A-Z]/.test(pw)) strength++;
+      if (/[0-9]/.test(pw)) strength++;
+      if (/[!@#$%^&*]/.test(pw)) strength++;
+      
+      const widths = [0, 20, 40, 60, 80, 100];
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+      const colors = ['transparent', '#f04e7a', '#f0b040', '#f0e040', '#4ef0a0', '#4ef0a0'];
+      
+      fill.style.width = widths[strength] + '%';
+      fill.style.background = colors[strength];
+      label.textContent = labels[strength];
+      label.style.color = colors[strength];
+    }
+
+    function onFPStrength() {
+      const pw = document.getElementById('fp-newpass').value;
+      const fill = document.getElementById('fpStrengthFill');
+      const label = document.getElementById('fpStrengthLabel');
+      
+      let strength = 0;
+      if (pw.length >= 6) strength++;
+      if (pw.length >= 10) strength++;
+      if (/[A-Z]/.test(pw)) strength++;
+      if (/[0-9]/.test(pw)) strength++;
+      if (/[!@#$%^&*]/.test(pw)) strength++;
+      
+      const widths = [0, 20, 40, 60, 80, 100];
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+      const colors = ['transparent', '#f04e7a', '#f0b040', '#f0e040', '#4ef0a0', '#4ef0a0'];
+      
+      fill.style.width = widths[strength] + '%';
+      fill.style.background = colors[strength];
+      label.textContent = labels[strength];
+      label.style.color = colors[strength];
+    }
+
+    /* ── FORGOT PASSWORD MODAL ── */
+    function openForgotPassword() {
+      document.getElementById('fpOverlay').classList.add('open');
+      goFPStep(1);
+    }
+
+    function closeFP() {
+      document.getElementById('fpOverlay').classList.remove('open');
+    }
+
+    function goFPStep(step) {
+      for (let i = 1; i <= 3; i++) {
+        document.getElementById('fpStep' + i).classList.toggle('active', i === step);
+        document.getElementById('fpDot' + i).classList.toggle('active', i === step);
+        document.getElementById('fpDot' + i).classList.toggle('done', i < step);
+        if (i < 3) document.getElementById('fpLine' + i).classList.toggle('done', i < step);
+      }
+    }
+
+    async function handleFPStep1() {
+      const email = document.getElementById('fp-email').value.trim();
+      if (!email) { showToast('⚠️ Enter email', true); return; }
+      
+      // Simulate sending a reset code
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      localStorage.setItem('fp_code', code);
+      localStorage.setItem('fp_email', email);
+      
+      document.getElementById('fpEmailDisplay').textContent = email;
+      document.getElementById('fpCodeDisplay').textContent = code;
+      document.getElementById('fpEmailPreview').style.display = 'block';
+      
+      goFPStep(2);
+      showToast('✓ Code generated (check modal)', false);
+    }
+
+    function handleFPStep2() {
+      const code = document.getElementById('fp-code').value.trim();
+      const correctCode = localStorage.getItem('fp_code');
+      
+      if (!code) { showToast('⚠️ Enter code', true); return; }
+      if (code !== correctCode) { showToast('❌ Invalid code', true); return; }
+      
+      goFPStep(3);
+      showToast('✓ Code verified', false);
+    }
+
+    function handleFPStep3() {
+      const newpass = document.getElementById('fp-newpass').value;
+      const confirm = document.getElementById('fp-confirmpass').value;
+      
+      if (!newpass || !confirm) { showToast('⚠️ Enter both passwords', true); return; }
+      if (newpass.length < 6) { showToast('⚠️ Password too short', true); return; }
+      if (newpass !== confirm) { showToast('❌ Passwords do not match', true); return; }
+      
+      showToast('✓ Password reset successful!', false);
+      setTimeout(() => { closeFP(); switchTab('signin'); }, 1500);
     }
   </script>
 </body>
