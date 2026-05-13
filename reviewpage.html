@@ -858,7 +858,10 @@
   </footer>
 
   <script>
-    const API = window.location.origin;
+    const API = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+      ? 'http://localhost:3000' 
+      : '';
+
 
     /* ── Utility ── */
     function fmt(n) {
@@ -911,13 +914,12 @@
           fetch(`${API}/api/dashboard/cities`),
         ]);
 
-        if (!statsRes.ok) throw new Error('Server returned ' + statsRes.status);
-
         const stats = await statsRes.json();
         const blood = await bloodRes.json();
         const types = await typeRes.json();
         const recent = await recentRes.json();
         const cities = await cityRes.json();
+
 
         /* Hide loading overlay */
         document.getElementById('loadingOverlay').classList.add('hidden');

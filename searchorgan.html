@@ -988,7 +988,10 @@
 
   <script>
     // ── API BASE (from File 1 — single clean declaration) ──
-    const API_BASE = window.location.origin;
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+      ? 'http://localhost:3000' 
+      : '';
+
 
     async function checkConn() {
       const dot = document.getElementById('connDot');
@@ -1062,9 +1065,16 @@
         let source = 'server';
 
         try {
-          const res = await fetch(`${API_BASE}/api/search/organs?${params.toString()}`, { signal: AbortSignal.timeout(4000) });
-          const data = await res.json();
+          const res = await fetch(`${API_BASE}/api/search/organs?${params.toString()}`, { signal: AbortSignal.timeout(6000) });
+          const resText = await res.text();
+          let data;
+          try {
+            data = JSON.parse(resText);
+          } catch(err) {
+            throw new Error("Invalid response");
+          }
           donors = data.donors || [];
+
         } catch (e) {
           console.warn('API Connection failed, falling back to local storage search.');
           source = 'local';

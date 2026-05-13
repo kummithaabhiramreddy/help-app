@@ -142,7 +142,9 @@ app.post('/api/register', async (req, res) => {
       timestamp: body.timestamp || Date.now()
     };
 
+    console.log("🛢️ Attempting to insert into Database...");
     const inserted = await db.insert(donors).values(data).returning();
+    console.log("✅ Database insert returned:", inserted.length, "rows");
     const newDonor = inserted[0];
     
     res.json({ 
@@ -300,7 +302,8 @@ app.get('/api/dashboard/cities', async (req, res) => {
     const result = await db.select({
       city: donors.city,
       total: count(),
-    }).from(donors).groupBy(donors.city).orderBy(desc(count())).limit(20);
+    }).from(donors).groupBy(donors.city).orderBy(sql`2 DESC`).limit(20);
+
 
     res.json({
       city_wise_distribution: result.map(r => ({

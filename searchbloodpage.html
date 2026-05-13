@@ -623,7 +623,10 @@
       el.style.display = 'block';
     }
 
-    const API_BASE = window.location.origin;
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+      ? 'http://localhost:3000' 
+      : '';
+
 
     async function checkConn() {
       const dot = document.getElementById('connDot');
@@ -667,9 +670,16 @@
         const p = new URLSearchParams();
         p.set('city', city);
         if (groupsToSearch.length) p.set('bloodGroups', groupsToSearch.join(','));
-        const res = await fetch(`${API_BASE}/api/search/blood?${p.toString()}`, { signal: AbortSignal.timeout(4000) });
-        const data = await res.json();
+        const res = await fetch(`${API_BASE}/api/search/blood?${p.toString()}`, { signal: AbortSignal.timeout(6000) });
+        const resText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(resText);
+        } catch(e) {
+          throw new Error("Invalid API response");
+        }
         allDonors = data.donors || [];
+
       } catch (e) {
         source = 'local';
         let local = [];
