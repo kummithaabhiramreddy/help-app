@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push --config ./drizzle.config.cjs"
   },
   "dependencies": {
     "body-parser": "^1.20.2",

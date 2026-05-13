@@ -1,17 +1,26 @@
-import { pgTable, serial, varchar, text, bigint, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, varchar, text, bigint, timestamp, index, integer } from 'drizzle-orm/pg-core';
 
 export const donors = pgTable(
   'donors',
   {
     id: serial('id').primaryKey(),
+    donorId: varchar('donorid', { length: 100 }),
     name: varchar('name', { length: 255 }).notNull(),
+    dob: varchar('dob', { length: 50 }),
+    bloodgroup: varchar('bloodgroup', { length: 10 }),
     type: varchar('type', { length: 50 }), // Blood, Organ, or Both
-    bloodgroup: varchar('blood_group', { length: 10 }),
-    organs: text('organ_type'), // Stores JSON array as string
+    organs: text('organs'),
     city: varchar('city', { length: 100 }),
-    phone: varchar('contact', { length: 20 }),
+    phone: varchar('phone', { length: 20 }),
     email: varchar('email', { length: 255 }),
+    biometric: text('biometric'),
+    registeredOn: varchar('registeredon', { length: 100 }),
+    timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at').defaultNow(),
+    donated_count: integer('donated_count').default(0).notNull(),
+    donated_detail: text('donated_detail').default(''),
+    received_count: integer('received_count').default(0).notNull(),
+    received_detail: text('received_detail').default(''),
   }
 );
 
