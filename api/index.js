@@ -3,14 +3,13 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { eq, and, or, like } from 'drizzle-orm';
+import { eq, and, or, like, desc, sql } from 'drizzle-orm';
 import 'dotenv/config';
 import { donors, emergencyRequests } from '../db/schema.js';
-import { desc } from 'drizzle-orm';
 
 // 1. Database Connection (Optimized for Vercel)
-const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+const neonClient = neon(process.env.DATABASE_URL);
+const db = drizzle(neonClient);
 
 // 2. Express App logic
 const app = express();
@@ -44,7 +43,6 @@ app.get('/api/health', async (req, res) => {
 app.get('/api/search/blood', async (req, res) => {
   const { city, bloodGroup } = req.query;
   try {
-    // Match donors who are 'Blood' or 'Both' type
     const conditions = [
       or(eq(donors.type, 'Blood'), eq(donors.type, 'Both'))
     ];
@@ -66,7 +64,6 @@ app.get('/api/search/blood', async (req, res) => {
 app.get('/api/search/organs', async (req, res) => {
   const { city, organs } = req.query;
   try {
-    // Match donors who are 'Organ' or 'Both' type
     const conditions = [
       or(eq(donors.type, 'Organ'), eq(donors.type, 'Both'))
     ];
@@ -82,7 +79,6 @@ app.get('/api/search/organs', async (req, res) => {
 
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
     
-    // Parse organs JSON for the response
     const parsedResults = results.map(row => ({
       ...row,
       organs: (() => { try { return JSON.parse(row.organs || '[]'); } catch (e) { return []; } })()
@@ -101,7 +97,6 @@ app.post('/api/register', async (req, res) => {
     const body = req.body;
     console.log("📥 Incoming Registration:", body.donorId);
 
-    // Map frontend fields to DB schema fields
     let organsData = body.organ_type || '[]';
     if (typeof organsData === 'string' && !organsData.startsWith('[')) {
       organsData = JSON.stringify(organsData.split(',').map(s => s.trim()).filter(s => s));
@@ -156,12 +151,55 @@ app.post('/api/donors/request', async (req, res) => {
 app.get('/api/donors', async (req, res) => {
   try {
     const results = await db.select().from(donors).orderBy(desc(donors.timestamp));
-    res.json({ donors: results });
+    // Parse organs for database view
+    const parsed = results.map(row => ({
+      ...row,
+      organs: (() => { try { return JSON.parse(row.organs || '[]'); } catch (e) { return []; } })()
+    }));
+    res.json({ donors: parsed });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+// Log Donation (for Database Explorer)
+app.post('/api/donors/donate', async (req, res) => {
+  try {
+    const { donorId, type } = req.body;
+    const donor = await db.select().from(donors).where(eq(donors.donorId, donorId)).limit(1);
+    
+    if (donor[0]) {
+      let currentDetail = donor[0].donated_detail || '';
+      const newItem = type === 'Blood' ? 'Blood Donation' : 'Organ Donation';
+      const updatedDetail = currentDetail ? `${currentDetail}, ${newItem}` : newItem;
+
+      await db.update(donors)
+        .set({
+          donated_count: (donor[0].donated_count || 0) + 1,
+          donated_detail: updatedDetail
+        })
+        .where(eq(donors.donorId, donorId));
+      
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Donor not found' });
+    }
+  } catch (error) {
+    console.error("Donate Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete Donor (for Database Explorer)
+app.post('/api/donors/delete', async (req, res) => {
+  try {
+    const { donorId } = req.body;
+    await db.delete(donors).where(eq(donors.donorId, donorId));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default app;
-
-
