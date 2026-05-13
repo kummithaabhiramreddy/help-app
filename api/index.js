@@ -41,29 +41,8 @@ app.use((req, res, next) => {
 });
 
 // Health Check
-app.get(['/api/health', '/health'], async (req, res) => {
-
-  try {
-    if (!process.env.DATABASE_URL) {
-      throw new Error("DATABASE_URL is missing in Vercel Environment Variables!");
-    }
-    const db = getDb();
-    const result = await db.select().from(donors).limit(1);
-
-    res.json({ 
-      status: 'ok', 
-      database: 'connected',
-      count: result.length,
-      env: process.env.VERCEL ? 'production' : 'development'
-    });
-  } catch (error) {
-    console.error("Database Error:", error);
-    res.status(500).json({ 
-      status: 'error', 
-      message: error.message,
-      hint: "Check Vercel Environment Variables" 
-    });
-  }
+app.get(['/api/health', '/health'], (req, res) => {
+  res.json({ status: 'ok', msg: 'responsive' });
 });
 
 app.get(['/api/ping', '/ping'], (req, res) => {
