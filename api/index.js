@@ -163,8 +163,19 @@ app.post('/api/register', async (req, res) => {
     };
 
     const db = getDb();
-    console.log("🛢️ Attempting to insert into Database...");
-    const inserted = await db.insert(donors).values(data).returning();
+    console.log("🛢️ Database connection verified. Attempting insert...");
+    
+    let inserted;
+    try {
+      inserted = await db.insert(donors).values(data).returning();
+    } catch (dbError) {
+      console.error("❌ Database Insert Error:", dbError);
+      return res.status(500).json({ 
+        error: "Database Insert Failed", 
+        details: dbError.message,
+        code: dbError.code 
+      });
+    }
 
     console.log("✅ Database insert returned:", inserted.length, "rows");
     const newDonor = inserted[0];
@@ -175,10 +186,14 @@ app.post('/api/register', async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Registration Error:", error);
-    res.status(500).json({ error: error.message });
+    console.error("🏁 Registration Flow Crash:", error);
+    res.status(500).json({ 
+      error: "Registration Crashed", 
+      message: error.message 
+    });
   }
 });
+
 
 // Emergency Request
 app.post('/api/donors/request', async (req, res) => {
