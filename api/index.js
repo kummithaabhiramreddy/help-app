@@ -41,19 +41,33 @@ app.get('/api/health', async (req, res) => {
 
 // Blood Search
 app.get('/api/search/blood', async (req, res) => {
-  const { city, bloodGroup } = req.query;
+  const { city, bloodGroup, bloodGroups } = req.query;
   try {
     const conditions = [
       or(eq(donors.type, 'Blood'), eq(donors.type, 'Both'))
     ];
     if (city) conditions.push(like(donors.city, `%${city}%`));
     
-    if (bloodGroup && bloodGroup !== 'Any Blood Group') {
+    // Support single or multiple blood groups
+    if (bloodGroups) {
+      const groups = bloodGroups.split(',').map(g => g.trim()).filter(g => g);
+      if (groups.length > 0) {
+        const groupConditions = groups.map(g => eq(donors.bloodgroup, g));
+        conditions.push(or(...groupConditions));
+      }
+    } else if (bloodGroup && bloodGroup !== 'Any Blood Group') {
       conditions.push(eq(donors.bloodgroup, bloodGroup));
     }
     
     const results = await db.select().from(donors).where(and(...conditions)).orderBy(desc(donors.timestamp));
-    res.json(results);
+    
+    // Parse organs JSON for the response
+    const parsedResults = results.map(row => ({
+      ...row,
+      organs: (() => { try { return JSON.parse(row.organs || '[]'); } catch (e) { return []; } })()
+    }));
+
+    res.json({ donors: parsedResults });
   } catch (error) {
     console.error("Blood Search Error:", error);
     res.status(500).json({ error: error.message });
