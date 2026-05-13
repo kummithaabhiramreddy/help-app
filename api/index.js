@@ -266,7 +266,9 @@ app.post('/api/donors/delete', async (req, res) => {
 
 app.get('/api/stats', async (req, res) => {
   try {
+    const db = getDb();
     const totalResult = await db.select({ count: count() }).from(donors);
+
     const typeResults = await db.select({ 
       type: donors.type, 
       count: count() 
@@ -283,7 +285,9 @@ app.get('/api/stats', async (req, res) => {
 
 app.get('/api/dashboard/blood-groups', async (req, res) => {
   try {
+    const db = getDb();
     const result = await db.select({
+
       bloodgroup: donors.bloodgroup,
       total: count(),
     }).from(donors).groupBy(donors.bloodgroup);
@@ -301,7 +305,9 @@ app.get('/api/dashboard/blood-groups', async (req, res) => {
 
 app.get('/api/dashboard/donation-types', async (req, res) => {
   try {
+    const db = getDb();
     const result = await db.select({
+
       type: donors.type,
       total: count(),
     }).from(donors).groupBy(donors.type);
