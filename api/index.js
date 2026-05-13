@@ -7,13 +7,19 @@ import { eq, and, or, like, desc, sql, count } from 'drizzle-orm';
 import 'dotenv/config';
 import { donors, emergencyRequests } from '../db/schema.js';
 
-// 1. Database Connection (Defensive initialization)
+// 1. Database Connection (Cached for performance)
+let cachedDb = null;
 const getDb = () => {
+  if (cachedDb) return cachedDb;
+  
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is missing! Please set it in Vercel Environment Variables.");
   }
+  
+  console.log("🔌 Initializing new Database connection...");
   const neonClient = neon(process.env.DATABASE_URL);
-  return drizzle(neonClient);
+  cachedDb = drizzle(neonClient);
+  return cachedDb;
 };
 
 // 2. Express App logic
@@ -21,6 +27,7 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 
 
 // Health Check
