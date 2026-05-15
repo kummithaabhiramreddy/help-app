@@ -9,18 +9,18 @@
     "db:push": "drizzle-kit push --config ./drizzle.config.cjs"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.9.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "drizzle-orm": "^0.30.10",
+    "drizzle-orm": "^0.45.2",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.13",
-    "pg": "^8.11.5",
-    "@neondatabase/serverless": "^0.9.1"
+    "pg": "^8.11.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0",
-    "drizzle-kit": "^0.22.1"
+    "drizzle-kit": "^0.31.10",
+    "nodemon": "^3.1.0"
   }
 }
