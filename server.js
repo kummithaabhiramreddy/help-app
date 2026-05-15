@@ -6,7 +6,7 @@ import url from 'url';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import dbRepo from './db/index.js'; // Use Drizzle ORM database
-import { sendRegistrationEmail } from './emailService.js';
+import { sendRegistrationEmail, sendOTPEmail } from './emailService.js';
 
 /* ── Password Security ── */
 function hashPassword(password) {
@@ -160,6 +160,93 @@ async function handler(req, res) {
     } catch (err) {
       console.error('❌ Login Error:', err);
       return sendJSON(res, 500, { error: 'Authentication failed.' });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     POST /api/auth-flow/dispatch-otp — send reset code
+  ══════════════════════════════════════════════ */
+  if (req.method === 'POST' && pathname === '/api/auth-flow/dispatch-otp') {
+    const body = await readBody(req);
+    const email = (body.email || '').toLowerCase().trim();
+
+    if (!email) return sendJSON(res, 400, { error: 'Email required' });
+
+    try {
+      const user = await dbRepo.getUserByEmail(email);
+      if (!user) return sendJSON(res, 404, { error: 'No account found with this email' });
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+      await dbRepo.saveOTP(email, otp, expiresAt);
+      const { simulated } = await sendOTPEmail(email, otp);
+
+      return sendJSON(res, 200, { 
+        success: true, 
+        simulated, 
+        otp: simulated ? otp : undefined,
+        message: simulated ? 'OTP generated (Simulated)' : 'OTP sent to email' 
+      });
+    } catch (err) {
+      console.error('❌ OTP Dispatch Error:', err);
+      return sendJSON(res, 500, { error: 'Failed to send reset code' });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     POST /api/auth-flow/confirm-otp — verify reset code
+  ══════════════════════════════════════════════ */
+  if (req.method === 'POST' && pathname === '/api/auth-flow/confirm-otp') {
+    const body = await readBody(req);
+    const email = (body.email || '').toLowerCase().trim();
+    const otp = body.otp;
+
+    if (!email || !otp) return sendJSON(res, 400, { error: 'Email and OTP required' });
+
+    try {
+      const record = await dbRepo.getOTP(email);
+      if (!record || record.code !== otp) {
+        return sendJSON(res, 400, { success: false, message: 'Invalid or expired code' });
+      }
+
+      if (Date.now() > Number(record.expiresAt)) {
+        await dbRepo.deleteOTP(email);
+        return sendJSON(res, 400, { success: false, message: 'Code has expired' });
+      }
+
+      return sendJSON(res, 200, { success: true, message: 'Code verified' });
+    } catch (err) {
+      console.error('❌ OTP Confirm Error:', err);
+      return sendJSON(res, 500, { error: 'Verification failed' });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     POST /api/auth/reset-password — update password
+  ══════════════════════════════════════════════ */
+  if (req.method === 'POST' && pathname === '/api/auth/reset-password') {
+    const body = await readBody(req);
+    const email = (body.email || '').toLowerCase().trim();
+    const otp = body.otp;
+    const newPassword = body.newPassword;
+
+    if (!email || !otp || !newPassword) return sendJSON(res, 400, { error: 'Missing fields' });
+
+    try {
+      const record = await dbRepo.getOTP(email);
+      if (!record || record.code !== otp || Date.now() > Number(record.expiresAt)) {
+        return sendJSON(res, 400, { error: 'Invalid or expired session' });
+      }
+
+      const hashedPassword = hashPassword(newPassword);
+      await dbRepo.updateUserPassword(email, hashedPassword);
+      await dbRepo.deleteOTP(email);
+
+      return sendJSON(res, 200, { success: true, message: 'Password updated successfully' });
+    } catch (err) {
+      console.error('❌ Password Reset Error:', err);
+      return sendJSON(res, 500, { error: 'Failed to reset password' });
     }
   }
 
@@ -604,6 +691,10 @@ async function handler(req, res) {
     const mime = MIME[ext] || 'text/plain';
     res.writeHead(200, { 'Content-Type': mime });
     return fs.createReadStream(filePath).pipe(res);
+  }
+
+  if (pathname.startsWith('/api/')) {
+    return sendJSON(res, 404, { error: `Endpoint not found: ${req.method} ${pathname}` });
   }
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });

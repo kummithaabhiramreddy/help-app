@@ -103,3 +103,42 @@ export async function sendRegistrationEmail(donor) {
     throw error;
   }
 }
+
+/**
+ * Send an OTP code for password reset
+ * @param {string} email 
+ * @param {string} code 
+ */
+export async function sendOTPEmail(email, code) {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn('⚠️ Email credentials missing. OTP will be logged only.');
+    return { simulated: true };
+  }
+
+  const mailOptions = {
+    from: `"HELP Security" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `${code} is your HELP password reset code`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #eee; border-radius: 12px; padding: 30px;">
+        <h2 style="color: #f04e7a; margin-top: 0;">Password Reset</h2>
+        <p>We received a request to reset your HELP account password.</p>
+        <p>Use the following code to proceed:</p>
+        <div style="background: #fdf2f5; border: 1px dashed #f04e7a; padding: 20px; text-align: center; font-size: 32px; font-weight: 800; letter-spacing: 5px; color: #f04e7a; margin: 20px 0; border-radius: 8px;">
+          ${code}
+        </div>
+        <p style="font-size: 13px; color: #666;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 11px; color: #999; text-align: center;">&copy; 2026 HELP Emergency Network</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { simulated: false };
+  } catch (error) {
+    console.error(`❌ Failed to send OTP email to ${email}:`, error);
+    throw error;
+  }
+}

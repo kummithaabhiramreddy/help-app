@@ -656,8 +656,8 @@
       exportSec.style.display = 'none';
       lastResults = [];
 
-      if (!city) {
-        resultsEl.innerHTML = '<p style="color:#ff6b7a;margin-top:10px;">📍 Please enter a city name to find donors.</p>';
+      if (!city || !bloodGroup) {
+        resultsEl.innerHTML = `<p style="color:#ff6b7a;margin-top:10px;">📍 Please enter a city and select a blood group.</p>`;
         scopeEl.textContent = '';
         return;
       }

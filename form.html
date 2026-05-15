@@ -939,6 +939,16 @@
       gap: 16px;
     }
 
+    .dob-select-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dob-select-group select {
+      padding: 14px 8px !important;
+      font-size: 13px !important;
+    }
+
     .section-divider {
       display: flex;
       align-items: center;
@@ -1492,7 +1502,29 @@
         <div class="row">
           <div class="field">
             <label>Date of Birth</label>
-            <input type="date" id="dob" required>
+            <div class="dob-select-group">
+              <select id="dobDay" required>
+                <option value="">Day</option>
+              </select>
+              <select id="dobMonth" required>
+                <option value="">Month</option>
+                <option value="01">Jan</option>
+                <option value="02">Feb</option>
+                <option value="03">Mar</option>
+                <option value="04">Apr</option>
+                <option value="05">May</option>
+                <option value="06">Jun</option>
+                <option value="07">Jul</option>
+                <option value="08">Aug</option>
+                <option value="09">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+              <select id="dobYear" required>
+                <option value="">Year</option>
+              </select>
+            </div>
           </div>
           <div class="field">
             <label>City</label>
@@ -2128,7 +2160,10 @@
       document.getElementById('donorForm').addEventListener('submit', async function (e) {
         e.preventDefault();
         var name = document.getElementById('name').value.trim();
-        var dob = document.getElementById('dob').value;
+        var dobDay = document.getElementById('dobDay').value;
+        var dobMonth = document.getElementById('dobMonth').value;
+        var dobYear = document.getElementById('dobYear').value;
+        var dob = (dobDay && dobMonth && dobYear) ? `${dobYear}-${dobMonth}-${dobDay.padStart(2, '0')}` : '';
         // when organs-only, simply label N/A so it fits in database
         var bloodGroup = bloodGroupEl.disabled ? 'N/A' : bloodGroupEl.value;
         var city = document.getElementById('city').value.trim();
@@ -2210,10 +2245,18 @@
             localStorage.setItem('bhm_bio_' + donorId, _biometricToken);
           }
           const payload = {
-            donorId, name, dob: dobFmt, bloodgroup: bloodGroup,
-            type: donationType, organ_type: selectedOrgans.join(', '), city,
-            contact: phone, email, biometric: null,
-            registeredOn: issued, timestamp: Date.now()
+            donorId, 
+            name, 
+            dob: dobFmt, 
+            bloodgroup: bloodGroup,
+            type: donationType, 
+            organs: selectedOrgans, // Send as array
+            city,
+            phone: phone, // Changed from contact to phone
+            email, 
+            biometric: null,
+            registeredOn: issued, 
+            timestamp: Date.now()
           };
 
           const controller = new AbortController();
@@ -2283,6 +2326,27 @@
         var f = this.files[0], el = document.getElementById('pdfName');
         el.textContent = f ? f.name + ' (' + Math.ceil(f.size / 1024) + ' KB)' : '';
       });
+
+      // Populate DOB Day and Year selects
+      (function populateDOB() {
+        const daySelect = document.getElementById('dobDay');
+        const yearSelect = document.getElementById('dobYear');
+        
+        for (let i = 1; i <= 31; i++) {
+          const opt = document.createElement('option');
+          opt.value = i.toString().padStart(2, '0');
+          opt.textContent = i;
+          daySelect.appendChild(opt);
+        }
+        
+        const currentYear = new Date().getFullYear();
+        for (let i = currentYear; i >= 1920; i--) {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = i;
+          yearSelect.appendChild(opt);
+        }
+      })();
 
       /* ─── HOSPITAL & BLOOD BANK FEATURE (200+ Entries) ─── */
       const BB_DATA = [

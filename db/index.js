@@ -334,12 +334,12 @@ export default {
    */
   getStats: async () => {
     try {
-      const result = await db
-        .select({ count: count() })
-        .from(donors);
+      const donorResult = await db.select({ count: count() }).from(donors);
+      const userResult = await db.select({ count: count() }).from(users);
 
       return {
-        total_donors: Number(result[0]?.count ?? 0),
+        total_donors: Number(donorResult[0]?.count ?? 0),
+        total_users: Number(userResult[0]?.count ?? 0),
         database: 'PostgreSQL + Drizzle ORM',
       };
     } catch (err) {
@@ -651,6 +651,54 @@ export default {
       return result[0] || null;
     } catch (err) {
       console.error('❌ User lookup error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Update user password
+   */
+  updateUserPassword: async (email, newPassword) => {
+    try {
+      await db.update(users).set({ password: newPassword }).where(eq(users.email, email));
+      return true;
+    } catch (err) {
+      console.error('❌ Password update error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * OTP Management
+   */
+  saveOTP: async (email, code, expiresAt) => {
+    try {
+      // First clear any existing OTPs for this email
+      await db.delete(otps).where(eq(otps.email, email));
+      await db.insert(otps).values({ email, code, expiresAt });
+      return true;
+    } catch (err) {
+      console.error('❌ Save OTP error:', err);
+      throw err;
+    }
+  },
+
+  getOTP: async (email) => {
+    try {
+      const result = await db.select().from(otps).where(eq(otps.email, email)).limit(1);
+      return result[0] || null;
+    } catch (err) {
+      console.error('❌ Get OTP error:', err);
+      throw err;
+    }
+  },
+
+  deleteOTP: async (email) => {
+    try {
+      await db.delete(otps).where(eq(otps.email, email));
+      return true;
+    } catch (err) {
+      console.error('❌ Delete OTP error:', err);
       throw err;
     }
   },
