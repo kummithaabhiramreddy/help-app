@@ -2204,23 +2204,6 @@
         }
         if ((donationType === 'Organ' || donationType === 'Both') && selectedOrgans.length === 0) { et.innerHTML = '⚠️ <strong>Please fill the form</strong> — Please select at least one organ to donate.'; et.style.display = 'block'; return; }
 
-        /* ── 3-Month Blood/Both Cooldown Check ── */
-        if (donationType === 'Blood' || donationType === 'Both') {
-          const regList = JSON.parse(localStorage.getItem('bhm_reg_list') || '[]');
-          const now = Date.now();
-          const existing = regList.find(r => 
-            (r.email === email.toLowerCase().trim() || r.phone === phone.replace(/\D/g, '')) && 
-            (r.donationType === 'Blood' || r.donationType === 'Both')
-          );
-          
-          if (existing && (now - existing.timestamp < BLOOD_COOLDOWN)) {
-            const daysLeft = Math.ceil((BLOOD_COOLDOWN - (now - existing.timestamp)) / (1000 * 60 * 60 * 24));
-            et.innerHTML = `⚠️ <strong>Already Registered</strong><br>You registered for blood donation recently. Please wait ${daysLeft} more days before registering again.`;
-            et.style.display = 'block';
-            return;
-          }
-        }
-
         /* Duplicate checking is now fully handled by the server (increases donation count) */
 
         var btn = document.getElementById('submitBtn'), spinner = document.getElementById('spinner'), btnText = document.getElementById('btnText');
