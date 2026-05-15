@@ -1139,15 +1139,8 @@
       const res = await apiRequest('/api/auth/register', 'POST', { name: n, email: e, phone: ph, password: pw });
 
       if (res.success) {
-        showToast('✅ Registered! Signing in...');
-        const loginRes = await apiRequest('/api/auth/login', 'POST', { email: e, password: pw });
-        if (loginRes.success) {
-          localStorage.setItem('help_currentUser', JSON.stringify(loginRes.user));
-          showRedirect('Welcome to HELP, ' + loginRes.user.name.split(' ')[0] + '!', loginRes.user);
-        } else {
-          showToast('✅ Registered! Please sign in.', false);
-          setTimeout(() => switchTab('signin'), 1500);
-        }
+        showToast('✅ Registered! Please sign in.', false);
+        setTimeout(() => switchTab('signin'), 1500);
       } else {
         showToast('❌ ' + (res.error || 'Failed'), true);
       }
@@ -1164,16 +1157,14 @@
 
       if (res.success) {
         localStorage.setItem('help_currentUser', JSON.stringify(res.user));
-        showRedirect('Welcome back, ' + res.user.name.split(' ')[0] + '!', res.user);
+        window.location.href = 'home.html';
       } else {
         showToast('❌ ' + (res.error || 'Invalid login'), true);
       }
     }
 
     function showRedirect(msg, user) {
-      document.getElementById('redirectMsg').innerHTML = msg + '<br><span style="font-size:0.85rem;color:var(--accent2)">Opening dashboard...</span>';
-      document.getElementById('redirectOverlay').classList.add('show');
-      setTimeout(() => window.location.href = 'home.html', 1600);
+      window.location.href = 'home.html';
     }
 
     function handleLogout() {
