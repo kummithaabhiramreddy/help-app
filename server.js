@@ -6,7 +6,7 @@ import url from 'url';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import dbRepo from './db/index.js'; // Use Drizzle ORM database
-import { sendRegistrationEmail } from './emailservice.js';
+import { sendRegistrationEmail } from './emailService.js';
 
 /* ── Password Security ── */
 function hashPassword(password) {

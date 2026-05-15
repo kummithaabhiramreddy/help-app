@@ -1140,8 +1140,15 @@
       const res = await apiRequest('/api/auth/register', 'POST', { name: n, email: e, phone: ph, password: pw });
 
       if (res.success) {
-        showToast('✅ Registered! Please sign in.');
-        setTimeout(() => switchTab('signin'), 1500);
+        showToast('✅ Registered! Signing in...');
+        const loginRes = await apiRequest('/api/auth/login', 'POST', { email: e, password: pw });
+        if (loginRes.success) {
+          localStorage.setItem('help_currentUser', JSON.stringify(loginRes.user));
+          showRedirect('Welcome to HELP, ' + loginRes.user.name.split(' ')[0] + '!', loginRes.user);
+        } else {
+          showToast('✅ Registered! Please sign in.', false);
+          setTimeout(() => switchTab('signin'), 1500);
+        }
       } else {
         showToast('❌ ' + (res.error || 'Failed'), true);
       }
