@@ -97,6 +97,13 @@ async function handler(req, res) {
   setCORS(res);
   console.log(`[HTTP] ${req.method} ${pathname}`);
 
+  // Set No-Cache headers for all API requests to ensure fresh data from Neon
+  if (pathname.startsWith('/api/')) {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+
   /* ── Pre-flight ── */
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
@@ -107,7 +114,13 @@ async function handler(req, res) {
      POST /api/auth/register — new user
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth/register') {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     console.log(`📥 Incoming user registration: email=${body.email}`);
 
     try {
@@ -136,7 +149,13 @@ async function handler(req, res) {
      POST /api/auth/login — authenticate user
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth/login') {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     console.log(`🔐 Incoming login request: email=${body.email}`);
 
     try {
@@ -170,7 +189,13 @@ async function handler(req, res) {
      POST /api/auth-flow/dispatch-otp — send reset code
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth-flow/dispatch-otp') {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     const email = (body.email || '').toLowerCase().trim();
 
     if (!email) return sendJSON(res, 400, { error: 'Email required' });
@@ -201,7 +226,13 @@ async function handler(req, res) {
      POST /api/auth-flow/confirm-otp — verify reset code
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth-flow/confirm-otp') {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     const email = (body.email || '').toLowerCase().trim();
     const otp = body.otp;
 
@@ -229,7 +260,13 @@ async function handler(req, res) {
      POST /api/auth/reset-password — update password
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth/reset-password') {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     const email = (body.email || '').toLowerCase().trim();
     const otp = body.otp;
     const newPassword = body.newPassword;
@@ -257,12 +294,17 @@ async function handler(req, res) {
      POST /api/donors  — save a new registration
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && (pathname === '/api/donors' || pathname === '/api/register')) {
-    const body = await readBody(req);
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
     console.log(`📥 Incoming registration: type=${body.type}, donorId=${body.donorId || 'new'}`);
 
-    const emailKey = (body.email || '').toLowerCase().trim();
-    const phoneKey = (body.phone || '').replace(/\D/g, '');
-    // Use last 10 digits for phone matching — handles country code prefix (e.g. 91XXXXXXXXXX vs XXXXXXXXXX)
+    const emailKey = String(body.email || '').toLowerCase().trim();
+    const phoneKey = String(body.phone || '').replace(/\D/g, '');
     const phoneLast10 = phoneKey.slice(-10);
 
     /* Duplicate check and update logic */

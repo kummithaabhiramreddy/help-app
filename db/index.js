@@ -26,7 +26,7 @@ export default {
         biometric: donor.biometric,
         registeredOn: donor.registeredOn,
         timestamp: donor.timestamp,
-        donated_count: donor.donated_count || 0,
+        donated_count: donor.donated_count || 1,
         donated_detail: donor.donated_detail || '',
         received_count: donor.received_count || 0,
         received_detail: donor.received_detail || '',
