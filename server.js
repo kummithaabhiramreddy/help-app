@@ -86,7 +86,7 @@ function sendJSON(res, status, data) {
    HTTP SERVER
    Integrated with PostgreSQL Database via Drizzle ORM
    ════════════════════════════════════════════════════ */
-const server = http.createServer(async (req, res) => {
+async function handler(req, res) {
   const parsed = url.parse(req.url, true);
   const pathname = decodeURIComponent(parsed.pathname);
   const query = parsed.query;
@@ -608,11 +608,15 @@ const server = http.createServer(async (req, res) => {
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('Not Found: ' + pathname);
-});
+}
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n🚀 Server live at http://localhost:${PORT}`);
-});
+// Only start listening locally (not on Vercel)
+if (!process.env.VERCEL) {
+  const server = http.createServer(handler);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`\n🚀 Server live at http://localhost:${PORT}`);
+  });
+}
 
-// For Vercel Serverless
-export default server;
+// Export handler for Vercel Serverless
+export default handler;
