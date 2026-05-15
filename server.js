@@ -539,20 +539,20 @@ async function handler(req, res) {
   ══════════════════════════════════════════════ */
   if (req.method === 'GET' && pathname === '/api/health') {
     try {
-      console.log('📡 Local Health check: Testing DB connection...');
+      console.log('📡 Database Health Check: Testing connection...');
       const allDonors = await dbRepo.getAllDonors(); 
       return sendJSON(res, 200, { 
         status: 'ok', 
         database: 'connected',
         count: allDonors.length,
-        env: 'development'
+        env: process.env.DATABASE_URL ? 'production' : 'development'
       });
     } catch (err) {
-      console.error('❌ Local Health check failed:', err.message);
+      console.error('❌ Database Health check failed:', err.message);
       return sendJSON(res, 500, { 
         status: 'error', 
         message: err.message,
-        hint: 'Ensure PostgreSQL is running locally.'
+        hint: 'Check database connectivity and credentials.'
       });
     }
   }
