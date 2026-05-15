@@ -9,7 +9,7 @@
     "db:push": "drizzle-kit push --config ./drizzle.config.cjs"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.9.1",
+    "@neondatabase/serverless": "^1.1.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
