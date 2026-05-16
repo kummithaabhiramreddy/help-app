@@ -590,8 +590,8 @@ function doGoogle(){
     }
   });
   
-  // Timeout safety
-  _gwt=setTimeout(()=>{if(document.getElementById('gWait').classList.contains('show')){cancelGW();toast('⚠️ Google sign-in timed out',true)}},60000);
+  // Timeout safety: Shortened to 15s for better UX
+  _gwt=setTimeout(()=>{if(document.getElementById('gWait').classList.contains('show')){cancelGW();toast('⚠️ Google Sign-In timed out or blocked',true)}},15000);
 }
 
 function trigGRedirect(){
