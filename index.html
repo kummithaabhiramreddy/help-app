@@ -572,21 +572,48 @@ function initGoogle(){
 }
 function doGoogle(){
   document.getElementById('gWait').classList.add('show');
+  // First try the standard prompt (One Tap / Account Picker)
   google.accounts.id.prompt(n=>{
-    if(n.isNotDisplayed()){cancelGW();const r=n.getNotDisplayedReason();if(['suppressed_by_user','origin_not_allowed','unregistered_origin'].includes(r)){trigGRedirect()}else{toast('⚠️ Google unavailable: '+r,true)}}
-    else if(n.isSkippedMoment()||n.isDismissedMoment()){cancelGW()}
+    if(n.isNotDisplayed() || n.isSkippedMoment() || n.isDismissedMoment()){
+      // If prompt fails or is dismissed, use the explicit OAuth flow which forces account selection
+      trigGRedirect();
+    }
   });
+  // Timeout safety
   _gwt=setTimeout(()=>{if(document.getElementById('gWait').classList.contains('show')){cancelGW();toast('⚠️ Google sign-in timed out',true)}},60000);
 }
 function trigGRedirect(){
   try{
-    const tc=google.accounts.oauth2.initTokenClient({client_id:GCID,scope:'openid email profile',callback:tr=>{
-      if(tr.error){toast('❌ Google sign-in failed: '+tr.error,true);return}
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+tr.access_token}}).then(r=>r.json()).then(p=>onGoogleProfile(p)).catch(()=>toast('❌ Could not fetch Google profile',true));
-    }});
-    document.getElementById('gWait').classList.add('show');
-    tc.requestAccessToken({prompt:'select_account'});
-  }catch(e){toast('❌ Google OAuth error: '+e.message,true)}
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GCID,
+      scope: 'openid email profile',
+      prompt: 'select_account', // This forces the "Choose an account" screen
+      callback: (response) => {
+        if (response.error) {
+          cancelGW();
+          if (response.error !== 'access_denied') toast('❌ Google sign-in failed: ' + response.error, true);
+          return;
+        }
+        // Fetch profile using the access token
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${response.access_token}` }
+        })
+        .then(r => r.json())
+        .then(p => {
+          cancelGW();
+          onGoogleProfile(p);
+        })
+        .catch(() => {
+          cancelGW();
+          toast('❌ Could not fetch Google profile', true);
+        });
+      }
+    });
+    client.requestAccessToken();
+  }catch(e){
+    cancelGW();
+    toast('❌ Google OAuth error: ' + e.message, true);
+  }
 }
 function onGoogleSignInCallback(resp){
   cancelGW();
