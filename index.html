@@ -692,7 +692,13 @@ async function fpS3(){
     if(d.success) {
       toast('✅ Password reset successful!');
       closeFP();
-      setTimeout(()=>{sw('si');document.getElementById('si-email').value=_fpe;document.getElementById('si-pass').value=np},800);
+      setTimeout(()=>{
+        sw('si');
+        document.getElementById('si-email').value=_fpe;
+        document.getElementById('si-pass').value=np;
+        // Automatically sign in after reset
+        setTimeout(() => doSignin(), 500);
+      }, 800);
     } else {
       throw new Error(d.error || 'Reset failed');
     }

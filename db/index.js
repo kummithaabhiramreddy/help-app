@@ -4,7 +4,7 @@
  */
 
 import { db } from './client.js';
-import { donors, users, emergencyRequests } from './schema.js';
+import { donors, users, emergencyRequests, otps } from './schema.js';
 import { eq, or, ilike, gt, and, sql, desc, count, inArray } from 'drizzle-orm';
 
 export default {
