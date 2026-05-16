@@ -186,6 +186,54 @@ async function handler(req, res) {
   }
 
   /* ══════════════════════════════════════════════
+     POST /api/auth/google — Google Sign-In
+  ══════════════════════════════════════════════ */
+  if (req.method === 'POST' && pathname === '/api/auth/google') {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
+    const { name, email, googleId } = body;
+
+    if (!email || !name) {
+      return sendJSON(res, 400, { error: 'Missing name or email from Google' });
+    }
+
+    try {
+      let user = await dbRepo.getUserByEmail(email);
+
+      if (!user) {
+        // Create new user for Google sign-in
+        // Use a secure random string for password since they'll use Google
+        const randomPass = crypto.randomBytes(32).toString('hex');
+        const hashedPassword = hashPassword(randomPass);
+        
+        const result = await dbRepo.createUser({
+          name,
+          email,
+          phone: '(Google)',
+          password: hashedPassword
+        });
+        
+        user = { id: result.id, name, email };
+        console.log(`✅ New Google user created: ${email}`);
+      } else {
+        console.log(`✅ Existing Google user logged in: ${email}`);
+      }
+
+      return sendJSON(res, 200, {
+        success: true,
+        user: { id: user.id, name: user.name, email: user.email }
+      });
+    } catch (err) {
+      console.error('❌ Google Auth API Error:', err);
+      return sendJSON(res, 500, { error: 'Google authentication failed.' });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
      POST /api/auth-flow/dispatch-otp — send reset code
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth-flow/dispatch-otp') {

@@ -216,7 +216,7 @@ main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align
 </div>
 
 <!-- ONE TAP -->
-<div id="g_id_onload" data-client_id="440675514682-lng0e1v467junk79btos6fvdbbuht0jv.apps.googleusercontent.com" data-callback="onGoogleSignInCallback" data-auto_prompt="false"></div>
+<div id="g_id_onload" data-client_id="609499873823-9a5pqf9pqv3ka6v15s3qe3srrdakcein.apps.googleusercontent.com" data-callback="onGoogleSignInCallback" data-auto_prompt="false"></div>
 
 <main>
   <!-- LOGO -->
@@ -408,7 +408,7 @@ main{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align
 <div class="toast" id="toast"></div>
 
 <script>
-const GCID='440675514682-lng0e1v467junk79btos6fvdbbuht0jv.apps.googleusercontent.com';
+const GCID='609499873823-9a5pqf9pqv3ka6v15s3qe3srrdakcein.apps.googleusercontent.com';
 const SK='geargo_accounts_v2';
 let _fpe='',_fpc='',_gwt=null;
 
@@ -593,11 +593,24 @@ function onGoogleSignInCallback(resp){
   try{const b=resp.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');const p=JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));onGoogleProfile({name:p.name,email:p.email,picture:p.picture,sub:p.sub})}
   catch{toast('❌ Could not read Google profile',true)}
 }
-function onGoogleProfile(p){
-  const gu={name:p.name,email:p.email,phone:'(Google)',address:'',password:'google_oauth_managed',picture:p.picture||null,isGoogle:true,googleId:p.sub||null};
-  const ex=byEmail(gu.email);if(!ex)upsert(gu);
-  localStorage.setItem('currentUser',JSON.stringify(ex||gu));
-  showRedir('Welcome, '+((p.name||'User').split(' ')[0])+'!<br><span style="font-size:13px;color:rgba(255,255,255,.6)">Loading your emergency dashboard…</span>');
+async function onGoogleProfile(p){
+  toast('⏳ Signing in with Google…');
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: p.name, email: p.email, googleId: p.sub })
+    });
+    
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Google sign-in failed');
+
+    localStorage.setItem('currentUser', JSON.stringify(d.user));
+    showRedir('Welcome, '+(d.user.name.split(' ')[0])+'!<br><span style="font-size:13px;color:rgba(255,255,255,.6)">Loading your emergency dashboard…</span>');
+  } catch (err) {
+    console.error('Google Auth Error:', err);
+    toast('❌ ' + err.message, true);
+  }
 }
 function cancelGW(){clearTimeout(_gwt);document.getElementById('gWait').classList.remove('show')}
 document.getElementById('gWait').addEventListener('click',e=>{if(e.target===document.getElementById('gWait'))cancelGW()});
