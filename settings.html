@@ -210,6 +210,22 @@
   <div class="card">
     <div class="card-title">Account</div>
     <div class="setting-row">
+      <span class="setting-label">Name</span>
+      <span style="font-size: 12px; color: var(--muted);" id="accNameDisplay">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Email</span>
+      <span style="font-size: 12px; color: var(--muted);" id="accEmailDisplay">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Phone</span>
+      <span style="font-size: 12px; color: var(--muted);" id="accPhoneDisplay">...</span>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Blood Group</span>
+      <span style="font-size: 12px; color: var(--muted);" id="accBloodDisplay">...</span>
+    </div>
+    <div class="setting-row">
       <span class="setting-label">User ID</span>
       <span style="font-size: 12px; color: var(--muted);" id="userIdDisplay">...</span>
     </div>
@@ -253,7 +269,11 @@
     if (confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('userId');
       localStorage.removeItem('userEmail');
-      window.location.href = 'home.html';
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userPhone');
+      localStorage.removeItem('userBloodGroup');
+      localStorage.removeItem('onboardingComplete');
+      window.location.href = 'index.html';
     }
   }
 
@@ -274,7 +294,12 @@
     }
   }
 
-  // Display user ID
+  // Display account details
+  document.getElementById('accNameDisplay').textContent = localStorage.getItem('userName') || 'Not provided';
+  document.getElementById('accEmailDisplay').textContent = localStorage.getItem('userEmail') || 'Not provided';
+  document.getElementById('accPhoneDisplay').textContent = localStorage.getItem('userPhone') || 'Not provided';
+  document.getElementById('accBloodDisplay').textContent = localStorage.getItem('userBloodGroup') || 'Not provided';
+
   const userId = localStorage.getItem('userId');
   document.getElementById('userIdDisplay').textContent = userId ? userId.substring(0, 8) + '...' : 'Not logged in';
 </script>

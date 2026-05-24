@@ -447,9 +447,121 @@
   .delay-3 { animation-delay: 0.18s; }
   .delay-4 { animation-delay: 0.26s; }
   .delay-5 { animation-delay: 0.34s; }
+
+  /* Onboarding Overlay */
+  .onboarding-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--bg);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .onboarding-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .onboarding-step {
+    display: none;
+    width: 100%;
+    max-width: 320px;
+    text-align: center;
+    animation: fadeUp 0.4s ease forwards;
+  }
+  .onboarding-step.active {
+    display: block;
+  }
+  .onboarding-step h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+  .onboarding-step p {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  .onboarding-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    margin-bottom: 20px;
+    outline: none;
+  }
+  .onboarding-input:focus {
+    border-color: var(--red);
+  }
+  .onboarding-btn {
+    width: 100%;
+    background: var(--red);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Syne', sans-serif;
+    cursor: pointer;
+  }
+  .onboarding-btn:active {
+    transform: scale(0.98);
+  }
 </style>
 </head>
 <body>
+
+<!-- Onboarding Overlay -->
+<div class="onboarding-overlay" id="onboardingOverlay">
+  <!-- Step 1: Name -->
+  <div class="onboarding-step active" id="onboardingStep1">
+    <h2>What's your name?</h2>
+    <p>Let's get to know you first.</p>
+    <input type="text" id="obName" class="onboarding-input" placeholder="Your full name">
+    <button class="onboarding-btn" onclick="nextOnboardingStep(2)">Next</button>
+  </div>
+  <!-- Step 2: Email -->
+  <div class="onboarding-step" id="onboardingStep2">
+    <h2>Your email address</h2>
+    <p>For important alerts and notifications.</p>
+    <input type="email" id="obEmail" class="onboarding-input" placeholder="name@example.com">
+    <button class="onboarding-btn" onclick="nextOnboardingStep(3)">Next</button>
+  </div>
+  <!-- Step 3: Phone -->
+  <div class="onboarding-step" id="onboardingStep3">
+    <h2>Phone number</h2>
+    <p>So we can reach you in emergencies.</p>
+    <input type="tel" id="obPhone" class="onboarding-input" placeholder="e.g. 9876543210">
+    <button class="onboarding-btn" onclick="nextOnboardingStep(4)">Next</button>
+  </div>
+  <!-- Step 4: Blood Group -->
+  <div class="onboarding-step" id="onboardingStep4">
+    <h2>Your blood group</h2>
+    <p>Crucial for saving lives.</p>
+    <select id="obBloodGroup" class="onboarding-input">
+      <option value="" disabled selected>Select Blood Group</option>
+      <option value="A+">A+</option>
+      <option value="A-">A-</option>
+      <option value="B+">B+</option>
+      <option value="B-">B-</option>
+      <option value="AB+">AB+</option>
+      <option value="AB-">AB-</option>
+      <option value="O+">O+</option>
+      <option value="O-">O-</option>
+    </select>
+    <button class="onboarding-btn" id="obSubmitBtn" onclick="submitOnboarding()">Finish</button>
+  </div>
+</div>
 
 <!-- Header -->
 <div class="app-header fade-up">
@@ -481,12 +593,12 @@
     <div class="lbl">Blood Banks</div>
   </div>
   <div class="stat-pill">
-    <div class="val cyan">O+</div>
+    <div class="val cyan" id="myBloodStat">N/A</div>
     <div class="lbl">My Blood</div>
   </div>
   <div class="stat-pill">
-    <div class="val green">2km</div>
-    <div class="lbl">Nearest</div>
+    <div class="val green" id="nearestStat">...</div>
+    <div class="lbl" id="nearestLbl">Donors</div>
   </div>
 </div>
 
@@ -572,6 +684,83 @@
   const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
     ? 'http://localhost:3000' 
     : '';
+
+  // ── Onboarding Logic ──
+  document.addEventListener('DOMContentLoaded', () => {
+    const isComplete = localStorage.getItem('onboardingComplete');
+    if (!isComplete) {
+      document.getElementById('onboardingOverlay').classList.add('active');
+    } else {
+      updateDashboardData();
+    }
+  });
+
+  function nextOnboardingStep(step) {
+    if (step === 2 && !document.getElementById('obName').value.trim()) return alert('Please enter your name');
+    if (step === 3 && !document.getElementById('obEmail').value.trim()) return alert('Please enter your email');
+    if (step === 4 && !document.getElementById('obPhone').value.trim()) return alert('Please enter your phone number');
+    
+    document.querySelectorAll('.onboarding-step').forEach(el => el.classList.remove('active'));
+    document.getElementById(`onboardingStep${step}`).classList.add('active');
+  }
+
+  async function submitOnboarding() {
+    const name = document.getElementById('obName').value.trim();
+    const email = document.getElementById('obEmail').value.trim();
+    const phone = document.getElementById('obPhone').value.trim();
+    const bloodGroup = document.getElementById('obBloodGroup').value;
+
+    if (!bloodGroup) return alert('Please select a blood group');
+
+    const btn = document.getElementById('obSubmitBtn');
+    btn.textContent = 'Saving...';
+    btn.disabled = true;
+
+    try {
+      const payload = { name, email, phone, bloodgroup: bloodGroup, type: 'Blood' };
+      const res = await fetch(`${API_BASE}/api/donors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to register');
+
+      localStorage.setItem('userName', name);
+      localStorage.setItem('userEmail', email);
+      localStorage.setItem('userPhone', phone);
+      localStorage.setItem('userBloodGroup', bloodGroup);
+      localStorage.setItem('onboardingComplete', 'true');
+      if (data.donorId) localStorage.setItem('userId', data.donorId); // save donor ID
+
+      document.getElementById('onboardingOverlay').classList.remove('active');
+      updateDashboardData();
+    } catch (err) {
+      alert('Error: ' + err.message);
+      btn.textContent = 'Finish';
+      btn.disabled = false;
+    }
+  }
+
+  async function updateDashboardData() {
+    // Set My Blood
+    const bg = localStorage.getItem('userBloodGroup') || 'N/A';
+    document.getElementById('myBloodStat').textContent = bg;
+
+    // Fetch total donors
+    try {
+      const res = await fetch(`${API_BASE}/api/stats`);
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById('nearestStat').textContent = data.total_donors;
+      } else {
+        document.getElementById('nearestStat').textContent = 'N/A';
+      }
+    } catch (e) {
+      document.getElementById('nearestStat').textContent = '-';
+    }
+  }
 
   // ── Get user ID from localStorage ──
   function getUserId() {
