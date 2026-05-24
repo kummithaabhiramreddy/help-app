@@ -764,6 +764,38 @@ async function handler(req, res) {
   /* ══════════════════════════════════════════════
      GET /api/donors/recent — recent registrations
   ══════════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════
+     GET /api/donor/:userId — fetch single donor record
+  ══════════════════════════════════════════════ */
+  if (req.method === 'GET' && pathname.startsWith('/api/donor/')) {
+    try {
+      const userId = pathname.replace('/api/donor/', '');
+      if (!userId) {
+        return sendJSON(res, 400, { error: 'User ID required.' });
+      }
+
+      const allDonors = await dbRepo.getAllDonors();
+      const donor = allDonors.find(d => d.donorId === userId || String(d.id) === userId);
+
+      if (!donor) {
+        return sendJSON(res, 404, { error: 'Donor not found.' });
+      }
+
+      // Parse JSON fields if they exist
+      const donorData = {
+        ...donor,
+        donated_detail: donor.donated_detail ? (typeof donor.donated_detail === 'string' ? JSON.parse(donor.donated_detail) : donor.donated_detail) : [],
+        received_detail: donor.received_detail ? (typeof donor.received_detail === 'string' ? JSON.parse(donor.received_detail) : donor.received_detail) : [],
+        organs: donor.organs ? (typeof donor.organs === 'string' ? donor.organs.split(',').map(o => o.trim()) : donor.organs) : []
+      };
+
+      return sendJSON(res, 200, { donor: donorData });
+    } catch (err) {
+      console.error('❌ Fetch donor error:', err);
+      return sendJSON(res, 500, { error: 'Failed to fetch donor record.' });
+    }
+  }
+
   if (req.method === 'GET' && pathname === '/api/donors/recent') {
     try {
       const limit = Math.min(parseInt(query.limit, 10) || 10, 100);

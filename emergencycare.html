@@ -1,1330 +1,557 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emergency Blood Bank Finder - AP & Telangana</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap"
-    rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif
-    }
-
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0a0a0a, #1a1a1a, #000);
-      color: #fff;
-      overflow-x: hidden
-    }
-
-    #three-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none
-    }
-
-    .container {
-      position: relative;
-      z-index: 1;
-      min-height: 100vh
-    }
-
-    .page {
-      display: none;
-      min-height: 100vh;
-      padding: 24px
-    }
-
-    .page.active {
-      display: block
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0
-      }
-
-      to {
-        opacity: 1
-      }
-    }
-
-    @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px)
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0)
-      }
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1
-      }
-
-      50% {
-        opacity: .6
-      }
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg)
-      }
-    }
-
-    .aFade {
-      animation: fadeIn .6s ease-out
-    }
-
-    .aSlide {
-      animation: slideUp .6s ease-out;
-      animation-fill-mode: both
-    }
-
-    .aPulse {
-      animation: pulse 2s infinite
-    }
-
-    .info-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px 0
-    }
-
-    .info-box {
-      max-width: 660px;
-      width: 100%
-    }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 90px;
-      height: 90px;
-      background: linear-gradient(135deg, #dc2626, #b91c1c);
-      border-radius: 50%;
-      margin-bottom: 20px;
-      box-shadow: 0 20px 50px -10px rgba(220, 38, 38, .55)
-    }
-
-    .logo svg {
-      width: 44px;
-      height: 44px;
-      fill: #fff
-    }
-
-    .main-title {
-      font-size: 3rem;
-      font-weight: 900;
-      margin-bottom: 10px;
-      background: linear-gradient(to right, #dc2626, #ef4444, #f43f5e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -.02em
-    }
-
-    .subtitle {
-      font-size: 1.05rem;
-      color: #d1d5db;
-      font-weight: 300;
-      margin-bottom: 6px
-    }
-
-    .subtitle2 {
-      font-size: .8rem;
-      color: #6b7280;
-      margin-bottom: 28px
-    }
-
-    .card {
-      background: linear-gradient(135deg, rgba(17, 24, 39, .92), rgba(31, 41, 55, .92));
-      backdrop-filter: blur(20px);
-      border-radius: 22px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, .55);
-      border: 1px solid rgba(220, 38, 38, .2);
-      padding: 34px
-    }
-
-    .form-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 26px;
-      display: flex;
-      align-items: center;
-      gap: 10px
-    }
-
-    .fgroup {
-      margin-bottom: 18px
-    }
-
-    .flabel {
-      display: block;
-      font-size: .83rem;
-      font-weight: 600;
-      color: #d1d5db;
-      margin-bottom: 7px
-    }
-
-    .finput,
-    .fselect {
-      width: 100%;
-      padding: 13px 15px;
-      background: rgba(31, 41, 55, .55);
-      border: 1px solid #374151;
-      border-radius: 11px;
-      color: #fff;
-      font-size: .95rem;
-      outline: none;
-      transition: all .3s
-    }
-
-    .finput:focus,
-    .fselect:focus {
-      border-color: #dc2626;
-      box-shadow: 0 0 0 3px rgba(220, 38, 38, .18)
-    }
-
-    .finput::placeholder {
-      color: #6b7280
-    }
-
-    .fselect option {
-      background: #1f2937;
-      color: #fff
-    }
-
-    .fselect optgroup {
-      color: #f87171;
-      font-weight: 700;
-      background: #0f172a
-    }
-
-    .radio-row {
-      display: flex;
-      gap: 14px
-    }
-
-    .rbtn {
-      flex: 1;
-      padding: 13px 18px;
-      border-radius: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all .3s;
-      border: 1px solid #374151;
-      background: rgba(31, 41, 55, .5);
-      color: #9ca3af;
-      text-align: center;
-      font-size: .9rem
-    }
-
-    .rbtn.on {
-      background: #dc2626;
-      color: #fff;
-      box-shadow: 0 8px 22px -4px rgba(220, 38, 38, .5);
-      border-color: #dc2626
-    }
-
-    .errmsg {
-      margin-top: 18px;
-      padding: 13px;
-      background: rgba(220, 38, 38, .18);
-      border: 1px solid #dc2626;
-      border-radius: 11px;
-      color: #fca5a5;
-      font-size: .85rem
-    }
-
-    .btn-red {
-      width: 100%;
-      margin-top: 26px;
-      padding: 17px;
-      background: linear-gradient(to right, #dc2626, #b91c1c);
-      color: #fff;
-      font-weight: 700;
-      font-size: 1.05rem;
-      border-radius: 11px;
-      border: none;
-      cursor: pointer;
-      transition: all .3s;
-      box-shadow: 0 10px 25px -5px rgba(220, 38, 38, .3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      text-decoration: none
-    }
-
-    .btn-red:hover:not(:disabled) {
-      background: linear-gradient(to right, #b91c1c, #991b1b);
-      transform: translateY(-1px)
-    }
-
-    .btn-red:disabled {
-      opacity: .5;
-      cursor: not-allowed
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid #fff;
-      border-top-color: transparent;
-      border-radius: 50%;
-      animation: spin .8s linear infinite
-    }
-
-    /* Results */
-    .res-wrap {
-      max-width: 1300px;
-      margin: 0 auto
-    }
-
-    .back-btn {
-      margin-bottom: 18px;
-      padding: 8px 16px;
-      background: rgba(31, 41, 55, .5);
-      color: #d1d5db;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: all .3s;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: .9rem
-    }
-
-    .back-btn:hover {
-      background: rgba(55, 65, 81, .6)
-    }
-
-    .res-header {
-      margin-bottom: 26px
-    }
-
-    .res-title {
-      font-size: 2.4rem;
-      font-weight: 900;
-      margin-bottom: 6px;
-      background: linear-gradient(to right, #dc2626, #f43f5e);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text
-    }
-
-    .res-sub {
-      color: #9ca3af;
-      font-size: .9rem
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-      gap: 18px
-    }
-
-    .bcard {
-      background: linear-gradient(135deg, rgba(17, 24, 39, .92), rgba(31, 41, 55, .92));
-      backdrop-filter: blur(20px);
-      border-radius: 15px;
-      border: 1px solid rgba(220, 38, 38, .2);
-      padding: 20px;
-      cursor: pointer;
-      transition: all .3s
-    }
-
-    .bcard:hover {
-      border-color: rgba(220, 38, 38, .55);
-      transform: translateY(-3px)
-    }
-
-    .bname {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 7px;
-      transition: color .3s;
-      line-height: 1.3
-    }
-
-    .bcard:hover .bname {
-      color: #f87171
-    }
-
-    .tag-row {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-      margin-bottom: 8px
-    }
-
-    .tag {
-      padding: 3px 9px;
-      border-radius: 8px;
-      font-size: .68rem;
-      font-weight: 700
-    }
-
-    .tag-ts {
-      background: rgba(99, 102, 241, .2);
-      color: #a5b4fc
-    }
-
-    .tag-ap {
-      background: rgba(220, 38, 38, .15);
-      color: #f87171
-    }
-
-    .tag-city {
-      background: rgba(55, 65, 81, .6);
-      color: #d1d5db
-    }
-
-    .stars {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      color: #fbbf24;
-      font-weight: 600;
-      font-size: .88rem
-    }
-
-    .irow {
-      display: flex;
-      align-items: flex-start;
-      gap: 7px;
-      color: #d1d5db;
-      font-size: .83rem;
-      margin-bottom: 9px
-    }
-
-    .iico {
-      width: 14px;
-      height: 14px;
-      flex-shrink: 0;
-      margin-top: 2px
-    }
-
-    .btypes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin: 12px 0
-    }
-
-    .bt {
-      padding: 4px 9px;
-      border-radius: 999px;
-      font-size: .7rem;
-      font-weight: 600;
-      background: #1f2937;
-      color: #d1d5db
-    }
-
-    .bt.hi {
-      background: #dc2626;
-      color: #fff
-    }
-
-    .call-btn {
-      width: 100%;
-      padding: 10px;
-      background: #dc2626;
-      color: #fff;
-      font-weight: 600;
-      border-radius: 11px;
-      border: none;
-      cursor: pointer;
-      transition: all .3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      text-decoration: none;
-      font-size: .9rem
-    }
-
-    .call-btn:hover {
-      background: #b91c1c
-    }
-
-    /* Detail */
-    .det-wrap {
-      max-width: 1060px;
-      margin: 0 auto
-    }
-
-    .det-card {
-      background: linear-gradient(135deg, rgba(17, 24, 39, .92), rgba(31, 41, 55, .92));
-      backdrop-filter: blur(20px);
-      border-radius: 22px;
-      border: 1px solid rgba(220, 38, 38, .2);
-      overflow: hidden
-    }
-
-    .det-hdr {
-      background: linear-gradient(to right, #dc2626, #b91c1c);
-      padding: 26px
-    }
-
-    .det-title {
-      font-size: 1.85rem;
-      font-weight: 900;
-      color: #fff;
-      margin-bottom: 12px;
-      line-height: 1.25
-    }
-
-    .badge-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap
-    }
-
-    .bdg {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 6px 13px;
-      border-radius: 999px;
-      font-weight: 600;
-      font-size: .83rem
-    }
-
-    .bdg-rat {
-      background: rgba(255, 255, 255, .2);
-      color: #fff
-    }
-
-    .bdg-ver {
-      background: rgba(34, 197, 94, .2);
-      color: #86efac
-    }
-
-    .bdg-st {
-      background: rgba(255, 255, 255, .15);
-      color: #fff
-    }
-
-    .det-body {
-      padding: 26px
-    }
-
-    .det-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-      gap: 26px;
-      margin-bottom: 26px
-    }
-
-    .dsec {
-      margin-bottom: 18px
-    }
-
-    .dtitle {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 13px;
-      display: flex;
-      align-items: center;
-      gap: 7px
-    }
-
-    .drow {
-      display: flex;
-      align-items: flex-start;
-      gap: 9px;
-      color: #d1d5db;
-      margin-bottom: 9px;
-      font-size: .88rem
-    }
-
-    .dlbl {
-      font-weight: 600;
-      color: #9ca3af;
-      min-width: 88px
-    }
-
-    .sbox {
-      background: rgba(31, 41, 55, .5);
-      border-radius: 11px;
-      padding: 13px
-    }
-
-    .srow {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 7px;
-      font-size: .88rem
-    }
-
-    .srow:last-child {
-      margin-bottom: 0
-    }
-
-    .bgrid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 9px
-    }
-
-    .bbox {
-      padding: 13px 6px;
-      border-radius: 11px;
-      text-align: center;
-      font-weight: 700;
-      background: #1f2937;
-      color: #d1d5db;
-      transition: all .3s;
-      font-size: .88rem
-    }
-
-    .bbox.hi {
-      background: #dc2626;
-      color: #fff;
-      box-shadow: 0 8px 20px -4px rgba(220, 38, 38, .5);
-      transform: scale(1.06)
-    }
-
-    .ok-msg {
-      margin-top: 13px;
-      padding: 13px;
-      background: rgba(34, 197, 94, .18);
-      border: 1px solid rgba(34, 197, 94, .4);
-      border-radius: 11px;
-      color: #86efac;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      font-size: .88rem
-    }
-
-    .act-btns {
-      display: flex;
-      flex-direction: column;
-      gap: 9px
-    }
-
-    .btn-grey {
-      width: 100%;
-      padding: 13px;
-      background: #1f2937;
-      color: #fff;
-      font-weight: 700;
-      border-radius: 11px;
-      border: 1px solid #374151;
-      cursor: pointer;
-      transition: all .3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 9px;
-      text-decoration: none;
-      font-size: .95rem
-    }
-
-    .btn-grey:hover {
-      background: #374151
-    }
-
-    .map-wrap {
-      margin-top: 26px
-    }
-
-    .map-frame {
-      background: #1f2937;
-      border-radius: 11px;
-      overflow: hidden;
-      height: 340px;
-      border: 1px solid #374151
-    }
-
-    .map-frame iframe {
-      width: 100%;
-      height: 100%;
-      border: none
-    }
-
-    .ico {
-      width: 17px;
-      height: 17px
-    }
-
-    .ico-lg {
-      width: 21px;
-      height: 21px
-    }
-
-    @media(max-width:768px) {
-      .main-title {
-        font-size: 2.1rem
-      }
-
-      .res-title {
-        font-size: 1.7rem
-      }
-
-      .det-title {
-        font-size: 1.45rem
-      }
-
-      .grid {
-        grid-template-columns: 1fr
-      }
-
-      .det-grid {
-        grid-template-columns: 1fr
-      }
-
-      .card {
-        padding: 20px
-      }
-    }
-
-    ::-webkit-scrollbar {
-      width: 8px
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #1f2937
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #dc2626;
-      border-radius: 4px
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Emergency Care — HELP</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #FF2D3B;
+    --bg: #0A0A0F;
+    --surface: #111118;
+    --surface2: #18181F;
+    --border: rgba(255,255,255,0.08);
+    --border-focus: rgba(255,45,59,0.5);
+    --text: #F2F2F5;
+    --muted: rgba(242,242,245,0.45);
+    --cyan: #00E5FF;
+    --green: #00FF88;
+    --amber: #FFBC42;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body {
+    background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text);
+    min-height:100vh; max-width:420px; margin:0 auto; overflow-x:hidden;
+  }
+  body::after {
+    content:''; position:fixed; top:-60px; left:50%; transform:translateX(-50%);
+    width:280px; height:120px;
+    background:radial-gradient(ellipse,rgba(255,45,59,0.22) 0%,transparent 70%);
+    pointer-events:none; z-index:0;
+  }
+  .top-bar {
+    display:flex; align-items:center; gap:12px;
+    padding:20px 20px 0; position:relative; z-index:1;
+  }
+  .back-btn {
+    width:38px; height:38px; border-radius:11px;
+    background:var(--surface); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; cursor:pointer; text-decoration:none; color:var(--text);
+    flex-shrink:0; transition:transform 0.15s;
+  }
+  .back-btn:active { transform:scale(0.9); }
+  .page-title { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-0.3px; }
+  .urgency-badge {
+    margin-left:auto; background:rgba(255,45,59,0.15);
+    border:1px solid rgba(255,45,59,0.35); color:var(--red);
+    font-size:10px; font-weight:700; letter-spacing:0.1em;
+    padding:4px 10px; border-radius:20px; text-transform:uppercase;
+    animation:blinkBadge 2s ease-in-out infinite;
+  }
+  @keyframes blinkBadge { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .hero-strip {
+    margin:18px 20px 0;
+    background:linear-gradient(135deg,#1a0507 0%,#160308 100%);
+    border:1px solid rgba(255,45,59,0.18); border-radius:18px;
+    padding:16px 18px; display:flex; align-items:center; gap:14px;
+    position:relative; overflow:hidden;
+  }
+  .hero-strip::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(90deg,var(--red),transparent); border-radius:18px 18px 0 0;
+  }
+  .hero-icon { font-size:34px; flex-shrink:0; }
+  .hero-text h2 { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:3px; }
+  .hero-text p { font-size:11px; color:var(--muted); line-height:1.4; }
+
+  /* progress */
+  .progress-row {
+    display:flex; align-items:center; padding:18px 20px 0; gap:0; position:relative; z-index:1;
+  }
+  .step { display:flex; flex-direction:column; align-items:center; gap:4px; flex:1; position:relative; }
+  .step-dot {
+    width:28px; height:28px; border-radius:50%;
+    background:var(--surface2); border:2px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; color:var(--muted);
+    transition:all 0.3s; position:relative; z-index:2;
+  }
+  .step.active .step-dot { background:var(--red); border-color:var(--red); color:white; box-shadow:0 0 12px rgba(255,45,59,0.5); }
+  .step.done .step-dot { background:rgba(0,255,136,0.15); border-color:var(--green); color:var(--green); }
+  .step-label { font-size:9px; color:var(--muted); font-weight:600; letter-spacing:0.06em; text-transform:uppercase; text-align:center; }
+  .step.active .step-label { color:var(--red); }
+  .step.done .step-label { color:var(--green); }
+  .step-line { flex:1; height:2px; background:var(--border); margin-bottom:18px; transition:background 0.3s; }
+  .step-line.done { background:var(--green); }
+  .step-line.active { background:var(--red); }
+
+  /* form */
+  .form-wrap { padding:20px 20px 0; position:relative; z-index:1; }
+  .form-page { display:none; }
+  .form-page.active { display:block; }
+  .page-head { margin-bottom:18px; }
+  .page-head .step-tag { font-size:10px; font-weight:700; color:var(--red); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:5px; }
+  .page-head h3 { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; letter-spacing:-0.4px; line-height:1.2; }
+
+  .field { margin-bottom:14px; }
+  .field label {
+    display:flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:600; color:var(--muted);
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:7px;
+  }
+  .field label .opt { font-size:9px; color:rgba(242,242,245,0.25); font-weight:500; text-transform:none; letter-spacing:0; }
+  .field label .req { color:var(--red); font-size:13px; line-height:1; }
+  .inp {
+    width:100%; padding:13px 14px;
+    background:var(--surface); border:1px solid var(--border); border-radius:13px;
+    color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; font-weight:500;
+    outline:none; transition:border-color 0.2s,box-shadow 0.2s;
+    -webkit-appearance:none; appearance:none;
+  }
+  .inp:focus { border-color:var(--border-focus); box-shadow:0 0 0 3px rgba(255,45,59,0.1); }
+  .inp::placeholder { color:rgba(242,242,245,0.2); }
+  select.inp {
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='rgba(242,242,245,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; cursor:pointer;
+  }
+  select.inp option { background:#1a1a24; color:var(--text); }
+  textarea.inp { resize:none; min-height:80px; line-height:1.5; }
+
+  /* need toggle */
+  .need-toggle { display:flex; gap:8px; margin-bottom:16px; }
+  .need-btn {
+    flex:1; padding:12px 8px; border-radius:13px;
+    border:1.5px solid var(--border); background:var(--surface);
+    color:var(--muted); font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+    cursor:pointer; text-align:center; transition:all 0.2s;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .need-btn .nb-icon { font-size:20px; }
+  .need-btn:active { transform:scale(0.95); }
+  .need-btn.sel-blood { border-color:var(--red); background:rgba(255,45,59,0.1); color:#FF6B75; box-shadow:0 0 12px rgba(255,45,59,0.15); }
+  .need-btn.sel-organ { border-color:var(--cyan); background:rgba(0,229,255,0.08); color:var(--cyan); box-shadow:0 0 12px rgba(0,229,255,0.12); }
+  .need-btn.sel-both  { border-color:var(--amber); background:rgba(255,188,66,0.08); color:var(--amber); box-shadow:0 0 12px rgba(255,188,66,0.12); }
+
+  /* blood grid */
+  .blood-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:6px; }
+  .blood-chip {
+    padding:10px 4px; border-radius:11px; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--muted); font-family:'Syne',sans-serif;
+    font-size:13px; font-weight:700; text-align:center; cursor:pointer; transition:all 0.18s;
+  }
+  .blood-chip:active { transform:scale(0.9); }
+  .blood-chip.selected { border-color:var(--red); background:rgba(255,45,59,0.12); color:#FF6B75; box-shadow:0 0 10px rgba(255,45,59,0.2); }
+
+  /* organ grid */
+  .organ-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+  .organ-chip {
+    padding:10px 12px; border-radius:11px; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--muted); font-size:12px; font-weight:600;
+    cursor:pointer; transition:all 0.18s; display:flex; align-items:center; gap:7px;
+  }
+  .organ-chip:active { transform:scale(0.95); }
+  .organ-chip.selected { border-color:var(--cyan); background:rgba(0,229,255,0.08); color:var(--cyan); }
+  .organ-chip .oc-icon { font-size:16px; }
+
+  /* severity */
+  .severity-row { display:flex; gap:6px; margin-top:6px; }
+  .sev-btn {
+    flex:1; padding:9px 4px; border-radius:10px; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--muted); font-size:10px; font-weight:700;
+    text-align:center; cursor:pointer; transition:all 0.18s;
+    letter-spacing:0.04em; text-transform:uppercase;
+  }
+  .sev-btn.sel-low  { border-color:var(--green); background:rgba(0,255,136,0.08); color:var(--green); }
+  .sev-btn.sel-med  { border-color:var(--amber); background:rgba(255,188,66,0.08); color:var(--amber); }
+  .sev-btn.sel-high { border-color:#FF7F00; background:rgba(255,127,0,0.08); color:#FF7F00; }
+  .sev-btn.sel-crit { border-color:var(--red); background:rgba(255,45,59,0.1); color:var(--red); }
+
+  /* info card */
+  .info-card {
+    background:rgba(0,229,255,0.05); border:1px solid rgba(0,229,255,0.12);
+    border-radius:13px; padding:12px 14px; display:flex; gap:10px;
+    align-items:flex-start; margin-bottom:14px;
+  }
+  .info-card .ic-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
+  .info-card p { font-size:11px; color:var(--muted); line-height:1.5; }
+
+  /* nav buttons */
+  .nav-btns { display:flex; gap:10px; padding:18px 20px 30px; position:relative; z-index:1; }
+  .btn-back-step {
+    width:48px; height:48px; border-radius:13px; border:1.5px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:transform 0.15s;
+  }
+  .btn-back-step:active { transform:scale(0.92); }
+  .btn-next {
+    flex:1; height:48px; border-radius:13px; border:none;
+    background:var(--red); color:white; font-family:'Syne',sans-serif;
+    font-size:14px; font-weight:700; letter-spacing:0.04em; cursor:pointer;
+    transition:transform 0.15s,box-shadow 0.15s; box-shadow:0 6px 20px rgba(255,45,59,0.35);
+  }
+  .btn-next:active { transform:scale(0.97); box-shadow:0 3px 10px rgba(255,45,59,0.3); }
+
+  /* summary */
+  .summary-list { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:16px; }
+  .sum-row { display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); }
+  .sum-row:last-child { border-bottom:none; }
+  .sum-icon { font-size:18px; flex-shrink:0; width:24px; text-align:center; }
+  .sum-label { font-size:10px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px; }
+  .sum-val { font-size:13px; font-weight:600; color:var(--text); }
+
+  /* success */
+  .success-screen { display:none; padding:40px 20px; text-align:center; position:relative; z-index:1; }
+  .success-screen.active { display:block; }
+  .success-icon { font-size:64px; margin-bottom:16px; animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .success-screen h2 { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; margin-bottom:8px; color:var(--green); }
+  .success-screen p { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:24px; }
+  .ref-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:24px; }
+  .ref-box .ref-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+  .ref-box .ref-num { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; color:var(--red); letter-spacing:2px; }
+  .eta-strip { display:flex; gap:10px; margin-bottom:24px; }
+  .eta-pill { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:12px 8px; text-align:center; }
+  .eta-pill .ep-val { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--amber); line-height:1; margin-bottom:3px; }
+  .eta-pill .ep-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; font-weight:600; }
+  .btn-home {
+    width:100%; height:50px; border-radius:14px; border:none;
+    background:var(--red); color:white; font-family:'Syne',sans-serif;
+    font-size:15px; font-weight:700; cursor:pointer;
+    box-shadow:0 6px 20px rgba(255,45,59,0.35); transition:transform 0.15s;
+  }
+  .btn-home:active { transform:scale(0.97); }
+
+  .fade-in { animation:fadeIn 0.3s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;transform:translateX(16px)} to{opacity:1;transform:translateX(0)} }
+  .hidden { display:none !important; }
+</style>
 </head>
-
 <body>
-  <div id="three-canvas"></div>
-  <div class="container">
 
-    <!-- HOME -->
-    <div id="infoPage" class="page active">
-      <div class="info-wrap">
-        <div class="info-box">
-          <div style="text-align:center" class="aFade">
-            <div class="logo aPulse" style="margin:0 auto">
-              <svg viewBox="0 0 24 24">
-                <path
-                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </div>
-            <h1 class="main-title">Blood Bank Finder</h1>
-            <p class="subtitle">Emergency blood search — Andhra Pradesh &amp; Telangana</p>
-            <p class="subtitle2">300+ blood banks · 100+ cities · Real-time distance</p>
-          </div>
-          <div class="card aSlide">
-            <h2 class="form-title">
-              <svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              Patient Information
-            </h2>
-            <div class="fgroup">
-              <label class="flabel">Full Name *</label>
-              <input type="text" id="uName" class="finput" placeholder="Enter full name">
-            </div>
-            <div class="fgroup">
-              <label class="flabel">Blood Group Required *</label>
-              <select id="uBlood" class="fselect">
-                <option value="">Select blood group</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>B+</option>
-                <option>B-</option>
-                <option>O+</option>
-                <option>O-</option>
-                <option>AB+</option>
-                <option>AB-</option>
-              </select>
-            </div>
-            <div class="fgroup">
-              <label class="flabel">Select State &amp; City *</label>
-              <input id="citySearch" class="fselect" list="citiesList" placeholder="Type to search city..." />
-              <datalist id="citiesList"></datalist>
-              <p style="color:#6b7280;font-size:.72rem;margin-top:5px">💡 100 cities · AP &amp; Telangana · 300+ blood
-                banks</p>
-            </div>
-            <div class="fgroup">
-              <label class="flabel">Contact Number *</label>
-              <input type="tel" id="uPhone" class="finput" placeholder="+91 XXXXX XXXXX">
-            </div>
-            <div class="fgroup">
-              <label class="flabel">Emergency? *</label>
-              <div class="radio-row">
-                <div class="rbtn on" onclick="setEm('yes',this)">🚨 Yes — Urgent</div>
-                <div class="rbtn" onclick="setEm('no',this)">📋 No — Planned</div>
-              </div>
-            </div>
-            <div id="errMsg" class="errmsg" style="display:none"></div>
-            <button class="btn-red" onclick="doSearch()">
-              <svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.35-4.35" />
-              </svg>
-              Find Nearby Blood Banks
-            </button>
-          </div>
-        </div>
+<div class="top-bar">
+  <a href="index.html" class="back-btn">&#8592;</a>
+  <div class="page-title">Emergency Care</div>
+  <div class="urgency-badge">🔴 Urgent</div>
+</div>
+
+<div class="hero-strip">
+  <div class="hero-icon">🚑</div>
+  <div class="hero-text">
+    <h2>Patient Intake Form</h2>
+    <p>Fill quickly — our team responds within minutes. Fields marked <span style="color:var(--red)">*</span> are required.</p>
+  </div>
+</div>
+
+<div class="progress-row" id="progressRow">
+  <div class="step active" id="st1"><div class="step-dot">1</div><div class="step-label">Info</div></div>
+  <div class="step-line" id="ln1"></div>
+  <div class="step" id="st2"><div class="step-dot">2</div><div class="step-label">Need</div></div>
+  <div class="step-line" id="ln2"></div>
+  <div class="step" id="st3"><div class="step-dot">3</div><div class="step-label">Details</div></div>
+  <div class="step-line" id="ln3"></div>
+  <div class="step" id="st4"><div class="step-dot">4</div><div class="step-label">Review</div></div>
+</div>
+
+<div class="form-wrap">
+
+  <!-- PAGE 1 -->
+  <div class="form-page active fade-in" id="page1">
+    <div class="page-head">
+      <div class="step-tag">Step 1 of 4</div>
+      <h3>Patient Information</h3>
+    </div>
+    <div class="field">
+      <label>Full Name <span class="req">*</span></label>
+      <input class="inp" id="patientName" type="text" placeholder="e.g. Arjun Sharma" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Phone Number <span class="req">*</span></label>
+      <input class="inp" id="patientPhone" type="tel" placeholder="+91 98765 43210" autocomplete="tel">
+    </div>
+    <div class="field">
+      <label>Email <span class="opt">(optional)</span></label>
+      <input class="inp" id="patientEmail" type="email" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Age <span class="req">*</span></label>
+      <input class="inp" id="patientAge" type="number" placeholder="e.g. 34" min="0" max="120">
+    </div>
+    <div class="field">
+      <label>Gender <span class="req">*</span></label>
+      <select class="inp" id="patientGender">
+        <option value="" disabled selected>Select gender</option>
+        <option>Male</option><option>Female</option><option>Other</option><option>Prefer not to say</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Location / Address <span class="req">*</span></label>
+      <input class="inp" id="patientLocation" type="text" placeholder="Current location or address">
+    </div>
+    <div class="info-card">
+      <div class="ic-icon">ℹ️</div>
+      <p>Your information is only shared with emergency responders and stays confidential.</p>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="form-page fade-in" id="page2">
+    <div class="page-head">
+      <div class="step-tag">Step 2 of 4</div>
+      <h3>What Does the Patient Need?</h3>
+    </div>
+    <div class="field">
+      <label>Emergency Type <span class="req">*</span></label>
+      <div class="need-toggle">
+        <div class="need-btn" id="btnBlood" onclick="selectNeed('blood')"><span class="nb-icon">🩸</span>Blood</div>
+        <div class="need-btn" id="btnOrgan" onclick="selectNeed('organ')"><span class="nb-icon">🫀</span>Organ</div>
+        <div class="need-btn" id="btnBoth"  onclick="selectNeed('both')"><span class="nb-icon">➕</span>Both</div>
       </div>
     </div>
-
-    <!-- RESULTS -->
-    <div id="searchPage" class="page">
-      <div class="res-wrap">
-        <button class="back-btn" onclick="goPage('info')">← Back</button>
-        <div class="res-header aFade">
-          <h1 class="res-title">Blood Banks Near You</h1>
-          <p class="res-sub" id="resCount">Searching…</p>
-          <p id="locInfo" style="color:#10b981;font-weight:600;display:none;margin-top:5px;font-size:.88rem">📍 Using
-            real-time location — sorted by distance</p>
-        </div>
-        <div class="grid" id="cardsGrid"></div>
+    <div class="field hidden" id="bloodSection">
+      <label>Required Blood Group <span class="req">*</span></label>
+      <div class="blood-grid">
+        <div class="blood-chip" onclick="selectBlood(this)">A+</div>
+        <div class="blood-chip" onclick="selectBlood(this)">A−</div>
+        <div class="blood-chip" onclick="selectBlood(this)">B+</div>
+        <div class="blood-chip" onclick="selectBlood(this)">B−</div>
+        <div class="blood-chip" onclick="selectBlood(this)">AB+</div>
+        <div class="blood-chip" onclick="selectBlood(this)">AB−</div>
+        <div class="blood-chip" onclick="selectBlood(this)">O+</div>
+        <div class="blood-chip" onclick="selectBlood(this)">O−</div>
       </div>
     </div>
-
-    <!-- DETAIL -->
-    <div id="detailPage" class="page">
-      <div class="det-wrap">
-        <button class="back-btn" onclick="goPage('search')">← Back to Results</button>
-        <div id="detContent"></div>
+    <div class="field hidden" id="organSection">
+      <label>Required Organ <span class="req">*</span> <span class="opt">(select all that apply)</span></label>
+      <div class="organ-grid">
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🫀</span>Heart</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🫁</span>Lungs</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🟫</span>Liver</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🫘</span>Kidney</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🟡</span>Pancreas</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">👁️</span>Cornea</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🦴</span>Bone Marrow</div>
+        <div class="organ-chip" onclick="toggleOrgan(this)"><span class="oc-icon">🩺</span>Skin Tissue</div>
       </div>
     </div>
+    <div class="field">
+      <label>Condition Severity <span class="req">*</span></label>
+      <div class="severity-row">
+        <div class="sev-btn" onclick="selectSev(this,'low','sel-low')">🟢<br>Low</div>
+        <div class="sev-btn" onclick="selectSev(this,'medium','sel-med')">🟡<br>Med</div>
+        <div class="sev-btn" onclick="selectSev(this,'high','sel-high')">🟠<br>High</div>
+        <div class="sev-btn" onclick="selectSev(this,'critical','sel-crit')">🔴<br>Crit</div>
+      </div>
+    </div>
+  </div>
 
-  </div><!-- /container -->
+  <!-- PAGE 3 -->
+  <div class="form-page fade-in" id="page3">
+    <div class="page-head">
+      <div class="step-tag">Step 3 of 4</div>
+      <h3>Medical Details</h3>
+    </div>
+    <div class="field">
+      <label>Known Allergies <span class="opt">(optional)</span></label>
+      <input class="inp" id="allergies" type="text" placeholder="e.g. Penicillin, Latex">
+    </div>
+    <div class="field">
+      <label>Current Medications <span class="opt">(optional)</span></label>
+      <input class="inp" id="medications" type="text" placeholder="e.g. Aspirin 75mg, Metformin">
+    </div>
+    <div class="field">
+      <label>Pre-existing Conditions <span class="opt">(optional)</span></label>
+      <input class="inp" id="conditions" type="text" placeholder="e.g. Diabetes, Hypertension">
+    </div>
+    <div class="field">
+      <label>Emergency Contact Name <span class="req">*</span></label>
+      <input class="inp" id="ecName" type="text" placeholder="Relative or guardian name">
+    </div>
+    <div class="field">
+      <label>Emergency Contact Phone <span class="req">*</span></label>
+      <input class="inp" id="ecPhone" type="tel" placeholder="+91 98765 43210">
+    </div>
+    <div class="field">
+      <label>Additional Notes <span class="opt">(optional)</span></label>
+      <textarea class="inp" id="notes" placeholder="Any other information the medical team should know…"></textarea>
+    </div>
+  </div>
 
-  <script>
-    // ══════════════════════════════════════════════════════════════
-    // BLOOD BANK DATA  — AP (50 cities) + Telangana (50 cities)
-    // ══════════════════════════════════════════════════════════════
-    const BB = [
-      // ─── ANDHRA PRADESH ───────────────────────────────────────────
-      // Visakhapatnam
-      { id: 1, n: "King George Hospital Blood Bank", a: "Maharanipeta, Visakhapatnam", c: "Visakhapatnam", s: "AP", lat: 17.7231, lng: 83.3072, ph: "+91-891-2565555", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 25000, rt: "10 min" },
-      { id: 2, n: "CARE Hospital Blood Bank", a: "Ramnagar, Visakhapatnam", c: "Visakhapatnam", s: "AP", lat: 17.7389, lng: 83.3199, ph: "+91-891-6672000", r: 4.9, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 28000, rt: "8 min" },
-      { id: 3, n: "Queen's NRI Hospital Blood Bank", a: "Visakha Valley, Visakhapatnam", c: "Visakhapatnam", s: "AP", lat: 17.7683, lng: 83.3758, ph: "+91-891-3040404", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 22000, rt: "12 min" },
-      { id: 4, n: "Seven Hills Hospital Blood Bank", a: "Rockdale Layout, Visakhapatnam", c: "Visakhapatnam", s: "AP", lat: 17.7510, lng: 83.2926, ph: "+91-891-2796666", r: 4.6, bt: ["A+", "B+", "O+", "AB+", "O-", "AB-"], h: "24/7", v: 1, td: 19000, rt: "15 min" },
-      { id: 5, n: "Red Cross Blood Bank Vizag", a: "Asilmetta, Visakhapatnam", c: "Visakhapatnam", s: "AP", lat: 17.7145, lng: 83.3114, ph: "+91-891-2567890", r: 4.5, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "8AM-8PM", v: 1, td: 16000, rt: "18 min" },
-      // Vijayawada
-      { id: 6, n: "Govt General Hospital Blood Bank", a: "Gunadala, Vijayawada", c: "Vijayawada", s: "AP", lat: 16.5062, lng: 80.6480, ph: "+91-866-2474888", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 18000, rt: "12 min" },
-      { id: 7, n: "Ramesh Hospitals Blood Bank", a: "Governorpet, Vijayawada", c: "Vijayawada", s: "AP", lat: 16.5193, lng: 80.6305, ph: "+91-866-2429999", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 20000, rt: "10 min" },
-      { id: 8, n: "Apollo Hospitals Blood Bank", a: "Bypass Road, Vijayawada", c: "Vijayawada", s: "AP", lat: 16.4850, lng: 80.6000, ph: "+91-866-6660000", r: 4.9, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 22000, rt: "8 min" },
-      { id: 9, n: "Lions Blood Bank Vijayawada", a: "MG Road, Vijayawada", c: "Vijayawada", s: "AP", lat: 16.5077, lng: 80.6430, ph: "+91-866-2578900", r: 4.5, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "8AM-8PM", v: 1, td: 12000, rt: "20 min" },
-      // Guntur
-      { id: 10, n: "Govt General Hospital Blood Bank", a: "Collectorate Road, Guntur", c: "Guntur", s: "AP", lat: 16.3067, lng: 80.4365, ph: "+91-863-2346789", r: 4.6, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 16000, rt: "14 min" },
-      { id: 11, n: "KIMS Hospital Blood Bank", a: "Lalapet Circle, Guntur", c: "Guntur", s: "AP", lat: 16.3100, lng: 80.4400, ph: "+91-863-2222222", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 17500, rt: "12 min" },
-      { id: 12, n: "NRI General Hospital Blood Bank", a: "Mangalagiri Road, Guntur", c: "Guntur", s: "AP", lat: 16.3200, lng: 80.4250, ph: "+91-863-2333333", r: 4.5, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 13000, rt: "18 min" },
-      // Nellore
-      { id: 13, n: "Govt General Hospital Blood Bank", a: "Trunk Road, Nellore", c: "Nellore", s: "AP", lat: 14.4426, lng: 79.9865, ph: "+91-861-2317777", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 14000, rt: "15 min" },
-      { id: 14, n: "Narayana Medical College Blood Bank", a: "Chinthareddypalem, Nellore", c: "Nellore", s: "AP", lat: 14.4500, lng: 79.9700, ph: "+91-861-2302000", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 18000, rt: "10 min" },
-      { id: 15, n: "Lions Club Blood Bank Nellore", a: "Gandhi Nagar, Nellore", c: "Nellore", s: "AP", lat: 14.4320, lng: 79.9800, ph: "+91-861-2389000", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "8AM-8PM", v: 1, td: 7500, rt: "25 min" },
-      // Tirupati
-      { id: 16, n: "SVIMS Blood Bank", a: "Alipiri Road, Tirupati", c: "Tirupati", s: "AP", lat: 13.6288, lng: 79.4192, ph: "+91-877-2287777", r: 4.9, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 30000, rt: "8 min" },
-      { id: 17, n: "BIRRD Hospital Blood Bank", a: "Renigunta Road, Tirupati", c: "Tirupati", s: "AP", lat: 13.6470, lng: 79.4070, ph: "+91-877-2248888", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 24000, rt: "10 min" },
-      { id: 18, n: "Ramesh Hospitals Blood Bank", a: "AIR Bypass, Tirupati", c: "Tirupati", s: "AP", lat: 13.6350, lng: 79.4150, ph: "+91-877-6644000", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 26000, rt: "9 min" },
-      { id: 19, n: "TTD Hospital Blood Bank", a: "Near Railway Station, Tirupati", c: "Tirupati", s: "AP", lat: 13.6380, lng: 79.4190, ph: "+91-877-2289999", r: 4.5, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 20000, rt: "12 min" },
-      // Kakinada
-      { id: 20, n: "Govt General Hospital Blood Bank", a: "Kakinada Town", c: "Kakinada", s: "AP", lat: 16.9891, lng: 82.2475, ph: "+91-884-2361111", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 12000, rt: "16 min" },
-      { id: 21, n: "Rangaraya Medical College Blood Bank", a: "Pithapuram Road, Kakinada", c: "Kakinada", s: "AP", lat: 16.9600, lng: 82.2300, ph: "+91-884-2372222", r: 4.6, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 14000, rt: "14 min" },
-      { id: 22, n: "KIMS Hospital Blood Bank Kakinada", a: "Vakalapudi, Kakinada", c: "Kakinada", s: "AP", lat: 16.9750, lng: 82.2550, ph: "+91-884-2383333", r: 4.4, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 10000, rt: "18 min" },
-      // Rajahmundry
-      { id: 23, n: "Govt General Hospital Blood Bank", a: "Danavaipeta, Rajahmundry", c: "Rajahmundry", s: "AP", lat: 17.0005, lng: 81.8040, ph: "+91-883-2472555", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 13000, rt: "16 min" },
-      { id: 24, n: "GSL Medical College Blood Bank", a: "NH-16, Rajahmundry", c: "Rajahmundry", s: "AP", lat: 16.9891, lng: 81.7780, ph: "+91-883-2484888", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 17000, rt: "12 min" },
-      { id: 25, n: "KIMS Blood Bank Rajahmundry", a: "Rajanagaram, Rajahmundry", c: "Rajahmundry", s: "AP", lat: 17.0156, lng: 81.8200, ph: "+91-883-2491111", r: 4.6, bt: ["A+", "B+", "O+", "AB+", "O-", "AB-"], h: "24/7", v: 1, td: 14500, rt: "14 min" },
-      // Kadapa
-      { id: 26, n: "Govt General Hospital Blood Bank", a: "Railway Station Road, Kadapa", c: "Kadapa", s: "AP", lat: 14.4673, lng: 78.8242, ph: "+91-8562-228855", r: 4.6, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 14000, rt: "15 min" },
-      { id: 27, n: "RIMS Hospital Blood Bank", a: "Pulivendula Road, Kadapa", c: "Kadapa", s: "AP", lat: 14.4797, lng: 78.7733, ph: "+91-8562-245678", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 16000, rt: "12 min" },
-      // Anantapur
-      { id: 28, n: "Govt General Hospital Blood Bank", a: "Hospital Road, Anantapur", c: "Anantapur", s: "AP", lat: 14.6819, lng: 77.6006, ph: "+91-8554-255666", r: 4.4, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 12000, rt: "16 min" },
-      { id: 29, n: "RDT Hospital Blood Bank", a: "Bathalapalli, Anantapur", c: "Anantapur", s: "AP", lat: 14.6500, lng: 77.5800, ph: "+91-8554-266777", r: 4.3, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 9500, rt: "22 min" },
-      // Kurnool
-      { id: 30, n: "Govt General Hospital Blood Bank", a: "Budhawarpet, Kurnool", c: "Kurnool", s: "AP", lat: 15.8281, lng: 78.0373, ph: "+91-8518-221122", r: 4.6, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 15000, rt: "14 min" },
-      { id: 31, n: "Santhiram Medical College Blood Bank", a: "Nandyal Road, Kurnool", c: "Kurnool", s: "AP", lat: 15.8100, lng: 78.0200, ph: "+91-8518-244444", r: 4.5, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 13000, rt: "18 min" },
-      // Eluru
-      { id: 32, n: "Govt General Hospital Blood Bank", a: "R.R. Pet, Eluru", c: "Eluru", s: "AP", lat: 16.7107, lng: 81.0953, ph: "+91-8812-222333", r: 4.4, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 8000, rt: "20 min" },
-      { id: 33, n: "GSL Hospital Blood Bank Eluru", a: "Bypass Road, Eluru", c: "Eluru", s: "AP", lat: 16.7150, lng: 81.1000, ph: "+91-8812-244555", r: 4.3, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 6500, rt: "25 min" },
-      // Ongole
-      { id: 34, n: "Govt General Hospital Blood Bank", a: "Kurnool Road, Ongole", c: "Ongole", s: "AP", lat: 15.5057, lng: 80.0499, ph: "+91-8592-234567", r: 4.4, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 9000, rt: "18 min" },
-      { id: 35, n: "SVIMS Blood Bank Ongole", a: "Prakasam Nagar, Ongole", c: "Ongole", s: "AP", lat: 15.5092, lng: 80.0445, ph: "+91-8592-267890", r: 4.3, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 7500, rt: "22 min" },
-      // Chittoor
-      { id: 36, n: "Govt General Hospital Blood Bank", a: "Bazaar Street, Chittoor", c: "Chittoor", s: "AP", lat: 13.2172, lng: 79.1003, ph: "+91-8572-228444", r: 4.3, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 9000, rt: "20 min" },
-      { id: 37, n: "SVMC Hospital Blood Bank", a: "Tirupati Road, Chittoor", c: "Chittoor", s: "AP", lat: 13.2200, lng: 79.1100, ph: "+91-8572-239555", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 7000, rt: "25 min" },
-      // Machilipatnam
-      { id: 38, n: "Govt General Hospital Blood Bank", a: "Collector Office Road, Machilipatnam", c: "Machilipatnam", s: "AP", lat: 16.1875, lng: 81.1389, ph: "+91-8672-222666", r: 4.3, bt: ["A+", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 7500, rt: "22 min" },
-      { id: 39, n: "Lions Blood Bank Machilipatnam", a: "Challapalli Road, Machilipatnam", c: "Machilipatnam", s: "AP", lat: 16.1800, lng: 81.1300, ph: "+91-8672-233777", r: 4.1, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 5000, rt: "28 min" },
-      // Tenali
-      { id: 40, n: "Govt Hospital Blood Bank Tenali", a: "Hospital Road, Tenali", c: "Tenali", s: "AP", lat: 16.2428, lng: 80.6474, ph: "+91-8644-222888", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 6000, rt: "24 min" },
-      { id: 41, n: "Red Cross Blood Bank Tenali", a: "Station Road, Tenali", c: "Tenali", s: "AP", lat: 16.2400, lng: 80.6450, ph: "+91-8644-234567", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 3500, rt: "28 min" },
-      // Proddatur
-      { id: 42, n: "Area Hospital Blood Bank Proddatur", a: "Jammalamadugu Road, Proddatur", c: "Proddatur", s: "AP", lat: 14.7502, lng: 78.5481, ph: "+91-8564-221999", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5500, rt: "26 min" },
-      // Bhimavaram
-      { id: 43, n: "Govt General Hospital Blood Bank", a: "Railway Station Road, Bhimavaram", c: "Bhimavaram", s: "AP", lat: 16.5449, lng: 81.5212, ph: "+91-8816-225533", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 8500, rt: "18 min" },
-      { id: 44, n: "Red Cross Blood Bank Bhimavaram", a: "Main Road, Bhimavaram", c: "Bhimavaram", s: "AP", lat: 16.5398, lng: 81.5280, ph: "+91-8816-220044", r: 4.3, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "8AM-8PM", v: 1, td: 6200, rt: "25 min" },
-      { id: 45, n: "Sai Sudha Blood Bank", a: "Jaya Nagar, Bhimavaram", c: "Bhimavaram", s: "AP", lat: 16.5501, lng: 81.5150, ph: "+91-8816-234567", r: 4.2, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "9AM-9PM", v: 0, td: 5100, rt: "30 min" },
-      // Srikakulam
-      { id: 46, n: "Govt General Hospital Blood Bank", a: "Srikakulam Town", c: "Srikakulam", s: "AP", lat: 18.2949, lng: 83.8938, ph: "+91-8942-222000", r: 4.4, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 8500, rt: "20 min" },
-      { id: 47, n: "Rangaraya College Blood Bank Srikakulam", a: "Kalingapatnam Road, Srikakulam", c: "Srikakulam", s: "AP", lat: 18.3000, lng: 83.9000, ph: "+91-8942-233111", r: 4.3, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 7000, rt: "23 min" },
-      // Vizianagaram
-      { id: 48, n: "Govt General Hospital Blood Bank", a: "Collectorate Road, Vizianagaram", c: "Vizianagaram", s: "AP", lat: 18.1124, lng: 83.3953, ph: "+91-8922-222222", r: 4.3, bt: ["A+", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 7800, rt: "22 min" },
-      { id: 49, n: "MVR Cancer Centre Blood Bank", a: "NH-16, Vizianagaram", c: "Vizianagaram", s: "AP", lat: 18.1200, lng: 83.3900, ph: "+91-8922-244444", r: 4.4, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 9000, rt: "18 min" },
-      // Nandyal
-      { id: 50, n: "Govt Hospital Blood Bank Nandyal", a: "Nandyal Town", c: "Nandyal", s: "AP", lat: 15.4777, lng: 78.4836, ph: "+91-8514-242333", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 6500, rt: "24 min" },
-      // Hindupur
-      { id: 51, n: "Govt Hospital Blood Bank Hindupur", a: "Railway Station Road, Hindupur", c: "Hindupur", s: "AP", lat: 13.8283, lng: 77.4917, ph: "+91-8556-222444", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5800, rt: "25 min" },
-      // Adoni
-      { id: 52, n: "Govt Hospital Blood Bank Adoni", a: "Mantralayam Road, Adoni", c: "Adoni", s: "AP", lat: 15.6267, lng: 77.2750, ph: "+91-8512-222555", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 4800, rt: "28 min" },
-      // Kandukur
-      { id: 53, n: "Area Hospital Blood Bank Kandukur", a: "Hospital Road, Kandukur", c: "Kandukur", s: "AP", lat: 15.2154, lng: 79.9043, ph: "+91-8592-241234", r: 4.2, bt: ["A+", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 4500, rt: "25 min" },
-      // Narasaraopet
-      { id: 54, n: "Govt Hospital Blood Bank Narasaraopet", a: "Guntur Road, Narasaraopet", c: "Narasaraopet", s: "AP", lat: 16.2349, lng: 80.0490, ph: "+91-8647-222666", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5200, rt: "26 min" },
-      // Tadepalligudem
-      { id: 55, n: "Govt Hospital Blood Bank Tadepalligudem", a: "Main Road, Tadepalligudem", c: "Tadepalligudem", s: "AP", lat: 16.8143, lng: 81.5270, ph: "+91-8818-223456", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5500, rt: "25 min" },
-      { id: 56, n: "Sri Venkateswara Blood Bank", a: "By-pass Road, Tadepalligudem", c: "Tadepalligudem", s: "AP", lat: 16.8200, lng: 81.5300, ph: "+91-8818-245678", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 3200, rt: "30 min" },
-      // Gudivada
-      { id: 57, n: "Area Hospital Blood Bank Gudivada", a: "Hospital Road, Gudivada", c: "Gudivada", s: "AP", lat: 16.4345, lng: 80.9929, ph: "+91-8674-222789", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5000, rt: "25 min" },
-      // Narasapuram
-      { id: 58, n: "Area Hospital Blood Bank Narasapuram", a: "Main Road, Narasapuram", c: "Narasapuram", s: "AP", lat: 16.4351, lng: 81.6945, ph: "+91-8814-222333", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 4200, rt: "28 min" },
-      // Palasa
-      { id: 59, n: "Area Hospital Blood Bank Palasa", a: "Railway Road, Palasa", c: "Palasa", s: "AP", lat: 18.7725, lng: 84.4159, ph: "+91-8941-222444", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3500, rt: "30 min" },
-      // Bobbili
-      { id: 60, n: "Area Hospital Blood Bank Bobbili", a: "Main Road, Bobbili", c: "Bobbili", s: "AP", lat: 18.5735, lng: 83.3621, ph: "+91-8941-232111", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "32 min" },
-      // Tadipatri
-      { id: 61, n: "Area Hospital Blood Bank Tadipatri", a: "Hospital Road, Tadipatri", c: "Tadipatri", s: "AP", lat: 14.9083, lng: 78.0110, ph: "+91-8558-222678", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3800, rt: "28 min" },
-      // Dharmavaram
-      { id: 62, n: "Govt Hospital Blood Bank Dharmavaram", a: "Main Road, Dharmavaram", c: "Dharmavaram", s: "AP", lat: 14.4118, lng: 77.7212, ph: "+91-8556-232222", r: 4.0, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4000, rt: "28 min" },
-      // Madanapalle
-      { id: 63, n: "Area Hospital Blood Bank Madanapalle", a: "Hospital Road, Madanapalle", c: "Madanapalle", s: "AP", lat: 13.5504, lng: 78.5024, ph: "+91-8571-222345", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4500, rt: "26 min" },
-      // Puttaparthi
-      { id: 64, n: "Sri Sathya Sai Institute Blood Bank", a: "Puttaparthi Town", c: "Puttaparthi", s: "AP", lat: 14.1665, lng: 77.8199, ph: "+91-8555-287000", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 15000, rt: "10 min" },
-      // Bapatla
-      { id: 65, n: "Govt Hospital Blood Bank Bapatla", a: "Main Road, Bapatla", c: "Bapatla", s: "AP", lat: 15.9041, lng: 80.4670, ph: "+91-8643-222567", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4000, rt: "28 min" },
-      // Markapur
-      { id: 66, n: "Area Hospital Blood Bank Markapur", a: "Hospital Road, Markapur", c: "Markapur", s: "AP", lat: 15.7356, lng: 79.2720, ph: "+91-8596-222333", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "32 min" },
-      // Kavali
-      { id: 67, n: "Area Hospital Blood Bank Kavali", a: "Trunk Road, Kavali", c: "Kavali", s: "AP", lat: 14.9138, lng: 79.9932, ph: "+91-861-2456789", r: 4.0, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "28 min" },
-      // Srikalahasti
-      { id: 68, n: "Area Hospital Blood Bank Srikalahasti", a: "Temple Road, Srikalahasti", c: "Srikalahasti", s: "AP", lat: 13.7499, lng: 79.6981, ph: "+91-877-2244000", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4200, rt: "26 min" },
-      // Narsapur
-      { id: 69, n: "Area Hospital Blood Bank Narsapur", a: "Main Road, Narsapur", c: "Narsapur", s: "AP", lat: 16.4351, lng: 81.6945, ph: "+91-8814-243000", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3500, rt: "30 min" },
-      // Repalle
-      { id: 70, n: "Area Hospital Blood Bank Repalle", a: "Hospital Road, Repalle", c: "Repalle", s: "AP", lat: 16.0215, lng: 80.8270, ph: "+91-8648-222444", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "30 min" },
-      // Chirala
-      { id: 71, n: "Area Hospital Blood Bank Chirala", a: "Main Road, Chirala", c: "Chirala", s: "AP", lat: 15.8267, lng: 80.3529, ph: "+91-8594-222555", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4200, rt: "26 min" },
-      { id: 72, n: "Srinivasa Blood Bank Chirala", a: "Station Road, Chirala", c: "Chirala", s: "AP", lat: 15.8300, lng: 80.3560, ph: "+91-8594-234567", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 3000, rt: "30 min" },
-      // Narasannapeta
-      { id: 73, n: "Area Hospital Blood Bank Narasannapeta", a: "Main Road, Narasannapeta", c: "Narasannapeta", s: "AP", lat: 18.4121, lng: 84.0448, ph: "+91-8942-255666", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
-      // Rajam
-      { id: 74, n: "Area Hospital Blood Bank Rajam", a: "Main Road, Rajam", c: "Rajam", s: "AP", lat: 18.4667, lng: 83.6500, ph: "+91-8941-244555", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2600, rt: "32 min" },
-      // Tuni
-      { id: 75, n: "Area Hospital Blood Bank Tuni", a: "Hospital Road, Tuni", c: "Tuni", s: "AP", lat: 17.3574, lng: 82.5483, ph: "+91-884-2444555", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "28 min" },
-      // Amalapuram
-      { id: 76, n: "Area Hospital Blood Bank Amalapuram", a: "Main Road, Amalapuram", c: "Amalapuram", s: "AP", lat: 16.5773, lng: 82.0055, ph: "+91-8856-222666", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4000, rt: "26 min" },
-      { id: 77, n: "Red Cross Blood Bank Amalapuram", a: "Station Road, Amalapuram", c: "Amalapuram", s: "AP", lat: 16.5800, lng: 82.0080, ph: "+91-8856-234567", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 1, td: 2800, rt: "30 min" },
-      // Tanuku
-      { id: 78, n: "Area Hospital Blood Bank Tanuku", a: "Hospital Road, Tanuku", c: "Tanuku", s: "AP", lat: 16.7540, lng: 81.6804, ph: "+91-8819-222777", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "26 min" },
-      // Palakollu
-      { id: 79, n: "Area Hospital Blood Bank Palakollu", a: "Main Road, Palakollu", c: "Palakollu", s: "AP", lat: 16.5188, lng: 81.7334, ph: "+91-8816-244888", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3200, rt: "28 min" },
-      // Jangareddygudem
-      { id: 80, n: "Area Hospital Blood Bank Jangareddygudem", a: "Hospital Road, Jangareddygudem", c: "Jangareddygudem", s: "AP", lat: 17.1290, lng: 81.3016, ph: "+91-8812-266999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "30 min" },
-      // Nuzvid
-      { id: 81, n: "Area Hospital Blood Bank Nuzvid", a: "NH-16, Nuzvid", c: "Nuzvid", s: "AP", lat: 16.7896, lng: 80.8460, ph: "+91-8656-222333", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "26 min" },
-      // Mandapeta
-      { id: 82, n: "Area Hospital Blood Bank Mandapeta", a: "Main Road, Mandapeta", c: "Mandapeta", s: "AP", lat: 16.8696, lng: 81.9260, ph: "+91-883-2466888", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "28 min" },
-      // Peddapuram
-      { id: 83, n: "Area Hospital Blood Bank Peddapuram", a: "Hospital Road, Peddapuram", c: "Peddapuram", s: "AP", lat: 17.0833, lng: 82.1333, ph: "+91-884-2344666", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3200, rt: "28 min" },
+  <!-- PAGE 4 -->
+  <div class="form-page fade-in" id="page4">
+    <div class="page-head">
+      <div class="step-tag">Step 4 of 4</div>
+      <h3>Review &amp; Submit</h3>
+    </div>
+    <div class="summary-list" id="summaryList"></div>
+    <div class="info-card">
+      <div class="ic-icon">🚨</div>
+      <p>Submitting alerts the nearest available emergency unit. Please verify all details before submitting.</p>
+    </div>
+  </div>
 
-      // ─── TELANGANA ────────────────────────────────────────────────
-      // Hyderabad
-      { id: 100, n: "NIMS Blood Bank", a: "Punjagutta, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4239, lng: 78.4738, ph: "+91-40-23489000", r: 4.9, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 50000, rt: "8 min" },
-      { id: 101, n: "Osmania General Hospital Blood Bank", a: "Afzalgunj, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.3757, lng: 78.4701, ph: "+91-40-24600019", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 45000, rt: "9 min" },
-      { id: 102, n: "Apollo Hospitals Blood Bank", a: "Jubilee Hills, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4225, lng: 78.4046, ph: "+91-40-23607777", r: 4.9, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 48000, rt: "7 min" },
-      { id: 103, n: "KIMS Hospitals Blood Bank", a: "Minister Road, Secunderabad", c: "Hyderabad", s: "TS", lat: 17.4400, lng: 78.4988, ph: "+91-40-44885000", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 40000, rt: "8 min" },
-      { id: 104, n: "Yashoda Hospitals Blood Bank", a: "Somajiguda, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4319, lng: 78.4544, ph: "+91-40-45675000", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 38000, rt: "10 min" },
-      { id: 105, n: "Care Hospitals Blood Bank", a: "Banjara Hills, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4117, lng: 78.4487, ph: "+91-40-30418000", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 35000, rt: "10 min" },
-      { id: 106, n: "Continental Hospitals Blood Bank", a: "Financial District, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4212, lng: 78.3493, ph: "+91-40-67000111", r: 4.8, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 36000, rt: "8 min" },
-      { id: 107, n: "Sunshine Hospitals Blood Bank", a: "PG Road, Secunderabad", c: "Hyderabad", s: "TS", lat: 17.4399, lng: 78.5002, ph: "+91-40-44553000", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 32000, rt: "9 min" },
-      { id: 108, n: "Red Cross Blood Bank Hyderabad", a: "Himayatnagar, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4031, lng: 78.4720, ph: "+91-40-27634652", r: 4.6, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "8AM-8PM", v: 1, td: 28000, rt: "14 min" },
-      { id: 109, n: "Hyderabad Central Blood Bank", a: "Nampally, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.3900, lng: 78.4700, ph: "+91-40-23201234", r: 4.6, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 30000, rt: "12 min" },
-      { id: 110, n: "Gandhi Hospital Blood Bank", a: "Musheerabad, Hyderabad", c: "Hyderabad", s: "TS", lat: 17.4042, lng: 78.4959, ph: "+91-40-27505566", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 42000, rt: "10 min" },
-      // Warangal
-      { id: 111, n: "MGM Hospital Blood Bank", a: "Warangal Urban", c: "Warangal", s: "TS", lat: 17.9784, lng: 79.5941, ph: "+91-870-2437222", r: 4.7, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 20000, rt: "12 min" },
-      { id: 112, n: "Govt General Hospital Blood Bank", a: "Kazipet, Warangal", c: "Warangal", s: "TS", lat: 17.9560, lng: 79.6096, ph: "+91-870-2445678", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 15000, rt: "15 min" },
-      { id: 113, n: "Kakatiya Medical College Blood Bank", a: "NIT, Warangal", c: "Warangal", s: "TS", lat: 18.0018, lng: 79.5581, ph: "+91-870-2458900", r: 4.6, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 17000, rt: "13 min" },
-      { id: 114, n: "Red Cross Blood Bank Warangal", a: "Station Road, Warangal", c: "Warangal", s: "TS", lat: 17.9721, lng: 79.5939, ph: "+91-870-2435678", r: 4.3, bt: ["A+", "B+", "O+", "AB+"], h: "8AM-8PM", v: 1, td: 10000, rt: "20 min" },
-      // Nizamabad
-      { id: 115, n: "Govt General Hospital Blood Bank", a: "Nizamabad Town", c: "Nizamabad", s: "TS", lat: 18.6725, lng: 78.0941, ph: "+91-8462-222333", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 12000, rt: "16 min" },
-      { id: 116, n: "Deccan Healthcare Blood Bank", a: "Main Road, Nizamabad", c: "Nizamabad", s: "TS", lat: 18.6800, lng: 78.1000, ph: "+91-8462-233444", r: 4.3, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 8500, rt: "20 min" },
-      { id: 117, n: "Lions Club Blood Bank Nizamabad", a: "Civil Lines, Nizamabad", c: "Nizamabad", s: "TS", lat: 18.6650, lng: 78.0900, ph: "+91-8462-244555", r: 4.2, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 5500, rt: "25 min" },
-      // Karimnagar
-      { id: 118, n: "Govt General Hospital Blood Bank", a: "Karimnagar Town", c: "Karimnagar", s: "TS", lat: 18.4386, lng: 79.1288, ph: "+91-878-2224444", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 13000, rt: "15 min" },
-      { id: 119, n: "RVM Hospital Blood Bank", a: "Main Road, Karimnagar", c: "Karimnagar", s: "TS", lat: 18.4400, lng: 79.1200, ph: "+91-878-2235555", r: 4.4, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 9000, rt: "18 min" },
-      { id: 120, n: "Red Cross Blood Bank Karimnagar", a: "Station Road, Karimnagar", c: "Karimnagar", s: "TS", lat: 18.4350, lng: 79.1300, ph: "+91-878-2246666", r: 4.2, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 1, td: 6000, rt: "25 min" },
-      // Khammam
-      { id: 121, n: "Govt General Hospital Blood Bank", a: "Khammam Town", c: "Khammam", s: "TS", lat: 17.2473, lng: 80.1514, ph: "+91-8742-222555", r: 4.5, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 11000, rt: "16 min" },
-      { id: 122, n: "Mamatha Medical College Blood Bank", a: "Rotary Nagar, Khammam", c: "Khammam", s: "TS", lat: 17.2550, lng: 80.1600, ph: "+91-8742-233666", r: 4.4, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 8500, rt: "20 min" },
-      { id: 123, n: "Lions Blood Bank Khammam", a: "Main Road, Khammam", c: "Khammam", s: "TS", lat: 17.2400, lng: 80.1450, ph: "+91-8742-244777", r: 4.1, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 5000, rt: "28 min" },
-      // Ramagundam
-      { id: 124, n: "Govt Hospital Blood Bank Ramagundam", a: "Godavarikhani, Ramagundam", c: "Ramagundam", s: "TS", lat: 18.7560, lng: 79.4745, ph: "+91-8728-222111", r: 4.3, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 8000, rt: "20 min" },
-      { id: 125, n: "SCCL Hospital Blood Bank Ramagundam", a: "NTPC Road, Ramagundam", c: "Ramagundam", s: "TS", lat: 18.7600, lng: 79.4800, ph: "+91-8728-233222", r: 4.4, bt: ["A+", "A-", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 9500, rt: "18 min" },
-      // Mahbubnagar
-      { id: 126, n: "Govt General Hospital Blood Bank", a: "Mahbubnagar Town", c: "Mahbubnagar", s: "TS", lat: 16.7448, lng: 77.9875, ph: "+91-8542-222777", r: 4.4, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 10000, rt: "18 min" },
-      { id: 127, n: "Sai Krishna Blood Bank Mahbubnagar", a: "Bus Stand Road, Mahbubnagar", c: "Mahbubnagar", s: "TS", lat: 16.7500, lng: 77.9950, ph: "+91-8542-233888", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 7000, rt: "22 min" },
-      // Nalgonda
-      { id: 128, n: "Govt General Hospital Blood Bank", a: "Nalgonda Town", c: "Nalgonda", s: "TS", lat: 17.0575, lng: 79.2675, ph: "+91-8682-222999", r: 4.3, bt: ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"], h: "24/7", v: 1, td: 9000, rt: "20 min" },
-      { id: 129, n: "Kamineni Hospital Blood Bank", a: "Station Road, Nalgonda", c: "Nalgonda", s: "TS", lat: 17.0600, lng: 79.2700, ph: "+91-8682-234567", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 6500, rt: "24 min" },
-      // Adilabad
-      { id: 130, n: "Govt General Hospital Blood Bank", a: "Adilabad Town", c: "Adilabad", s: "TS", lat: 19.6640, lng: 78.5320, ph: "+91-8732-222333", r: 4.3, bt: ["A+", "B+", "O+", "O-", "AB+"], h: "24/7", v: 1, td: 7000, rt: "22 min" },
-      { id: 131, n: "Red Cross Blood Bank Adilabad", a: "Main Road, Adilabad", c: "Adilabad", s: "TS", lat: 19.6680, lng: 78.5350, ph: "+91-8732-233444", r: 4.1, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 1, td: 4500, rt: "28 min" },
-      // Suryapet
-      { id: 132, n: "Govt Hospital Blood Bank Suryapet", a: "Suryapet Town", c: "Suryapet", s: "TS", lat: 17.1407, lng: 79.6224, ph: "+91-8685-222111", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5500, rt: "24 min" },
-      { id: 133, n: "Community Blood Bank Suryapet", a: "Station Road, Suryapet", c: "Suryapet", s: "TS", lat: 17.1450, lng: 79.6260, ph: "+91-8685-233222", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 0, td: 3500, rt: "28 min" },
-      // Miryalaguda
-      { id: 134, n: "Area Hospital Blood Bank Miryalaguda", a: "Miryalaguda Town", c: "Miryalaguda", s: "TS", lat: 16.8727, lng: 79.5626, ph: "+91-8683-222444", r: 4.1, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 4500, rt: "26 min" },
-      // Siddipet
-      { id: 135, n: "Govt Hospital Blood Bank Siddipet", a: "Siddipet Town", c: "Siddipet", s: "TS", lat: 18.1018, lng: 78.8521, ph: "+91-8457-222555", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5000, rt: "25 min" },
-      // Jagtial
-      { id: 136, n: "Govt Hospital Blood Bank Jagtial", a: "Jagtial Town", c: "Jagtial", s: "TS", lat: 18.7939, lng: 78.9167, ph: "+91-8724-222666", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4500, rt: "26 min" },
-      // Mancherial
-      { id: 137, n: "Govt Hospital Blood Bank Mancherial", a: "Mancherial Town", c: "Mancherial", s: "TS", lat: 18.8699, lng: 79.4592, ph: "+91-8736-222777", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5000, rt: "24 min" },
-      // Nirmal
-      { id: 138, n: "Govt Hospital Blood Bank Nirmal", a: "Nirmal Town", c: "Nirmal", s: "TS", lat: 19.0959, lng: 78.3455, ph: "+91-8734-222888", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3800, rt: "28 min" },
-      // Kothagudem
-      { id: 139, n: "Govt Hospital Blood Bank Kothagudem", a: "Kothagudem Town", c: "Kothagudem", s: "TS", lat: 17.5521, lng: 80.6178, ph: "+91-8744-222999", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 5200, rt: "24 min" },
-      { id: 140, n: "SCCL General Hospital Blood Bank", a: "Yellandu Road, Kothagudem", c: "Kothagudem", s: "TS", lat: 17.5600, lng: 80.6200, ph: "+91-8744-233111", r: 4.3, bt: ["A+", "A-", "B+", "O+", "O-"], h: "24/7", v: 1, td: 7000, rt: "20 min" },
-      // Bhongir
-      { id: 141, n: "Area Hospital Blood Bank Bhongir", a: "Bhongir Town", c: "Bhongir", s: "TS", lat: 17.5130, lng: 78.8893, ph: "+91-8682-244555", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3500, rt: "28 min" },
-      // Vikarabad
-      { id: 142, n: "Area Hospital Blood Bank Vikarabad", a: "Vikarabad Town", c: "Vikarabad", s: "TS", lat: 17.3364, lng: 77.9046, ph: "+91-40-28441234", r: 4.0, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "28 min" },
-      // Sangareddy
-      { id: 143, n: "Govt Hospital Blood Bank Sangareddy", a: "Sangareddy Town", c: "Sangareddy", s: "TS", lat: 17.6257, lng: 78.0858, ph: "+91-8455-222111", r: 4.2, bt: ["A+", "B+", "O+", "AB+", "O-"], h: "24/7", v: 1, td: 5500, rt: "24 min" },
-      { id: 144, n: "Prathima Hospitals Blood Bank", a: "Main Road, Sangareddy", c: "Sangareddy", s: "TS", lat: 17.6280, lng: 78.0880, ph: "+91-8455-233222", r: 4.3, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 6000, rt: "22 min" },
-      // Medak
-      { id: 145, n: "Area Hospital Blood Bank Medak", a: "Medak Town", c: "Medak", s: "TS", lat: 18.0457, lng: 78.2667, ph: "+91-8452-222333", r: 4.1, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 4000, rt: "26 min" },
-      // Wanaparthy
-      { id: 146, n: "Area Hospital Blood Bank Wanaparthy", a: "Wanaparthy Town", c: "Wanaparthy", s: "TS", lat: 16.3622, lng: 78.0636, ph: "+91-8545-222444", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3500, rt: "28 min" },
-      // Narsampet
-      { id: 147, n: "Area Hospital Blood Bank Narsampet", a: "Narsampet Town", c: "Narsampet", s: "TS", lat: 17.9299, lng: 79.8940, ph: "+91-8719-222555", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3200, rt: "30 min" },
-      // Tandur
-      { id: 148, n: "Area Hospital Blood Bank Tandur", a: "Tandur Town", c: "Tandur", s: "TS", lat: 17.2481, lng: 77.5757, ph: "+91-8413-222666", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "30 min" },
-      // Bodhan
-      { id: 149, n: "Area Hospital Blood Bank Bodhan", a: "Bodhan Town", c: "Bodhan", s: "TS", lat: 18.6640, lng: 77.8844, ph: "+91-8462-255777", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "28 min" },
-      // Kamareddy
-      { id: 150, n: "Govt Hospital Blood Bank Kamareddy", a: "Kamareddy Town", c: "Kamareddy", s: "TS", lat: 18.3238, lng: 78.3395, ph: "+91-8468-222888", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4000, rt: "26 min" },
-      // Zaheerabad
-      { id: 151, n: "Area Hospital Blood Bank Zaheerabad", a: "Zaheerabad Town", c: "Zaheerabad", s: "TS", lat: 17.6826, lng: 77.6060, ph: "+91-8455-255999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3200, rt: "30 min" },
-      // Jadcherla
-      { id: 152, n: "Area Hospital Blood Bank Jadcherla", a: "Jadcherla Town", c: "Jadcherla", s: "TS", lat: 16.7600, lng: 78.1369, ph: "+91-8542-255111", r: 4.0, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "28 min" },
-      // Bhainsa
-      { id: 153, n: "Area Hospital Blood Bank Bhainsa", a: "Bhainsa Town", c: "Bhainsa", s: "TS", lat: 19.0966, lng: 77.9574, ph: "+91-8734-255222", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "32 min" },
-      // Metpally
-      { id: 154, n: "Area Hospital Blood Bank Metpally", a: "Metpally Town", c: "Metpally", s: "TS", lat: 18.8246, lng: 78.5830, ph: "+91-8724-244333", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "30 min" },
-      // Yellandu
-      { id: 155, n: "SCCL Hospital Blood Bank Yellandu", a: "Yellandu Town", c: "Yellandu", s: "TS", lat: 17.5978, lng: 80.3329, ph: "+91-8744-255444", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "26 min" },
-      // Narayanpet
-      { id: 156, n: "Area Hospital Blood Bank Narayanpet", a: "Narayanpet Town", c: "Narayanpet", s: "TS", lat: 16.7431, lng: 77.4955, ph: "+91-8545-255333", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "30 min" },
-      // Gadwal
-      { id: 157, n: "Area Hospital Blood Bank Gadwal", a: "Gadwal Town", c: "Gadwal", s: "TS", lat: 16.2334, lng: 77.7991, ph: "+91-8546-222444", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
-      // Nagarkurnool
-      { id: 158, n: "Area Hospital Blood Bank Nagarkurnool", a: "Nagarkurnool Town", c: "Nagarkurnool", s: "TS", lat: 16.4800, lng: 78.3230, ph: "+91-8548-222555", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3200, rt: "28 min" },
-      // Achampet
-      { id: 159, n: "Area Hospital Blood Bank Achampet", a: "Achampet Town", c: "Achampet", s: "TS", lat: 16.1600, lng: 78.8980, ph: "+91-8548-244666", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2500, rt: "32 min" },
-      // Kalwakurthy
-      { id: 160, n: "Area Hospital Blood Bank Kalwakurthy", a: "Kalwakurthy Town", c: "Kalwakurthy", s: "TS", lat: 16.5283, lng: 78.4982, ph: "+91-8548-266777", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2200, rt: "34 min" },
-      // Mahabuabad
-      { id: 161, n: "Area Hospital Blood Bank Mahabuabad", a: "Mahabuabad Town", c: "Mahabuabad", s: "TS", lat: 17.6004, lng: 80.0013, ph: "+91-8719-233666", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
-      // Dornakal
-      { id: 162, n: "Area Hospital Blood Bank Dornakal", a: "Dornakal Town", c: "Dornakal", s: "TS", lat: 17.4333, lng: 80.1500, ph: "+91-8719-244777", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2500, rt: "32 min" },
-      // Sathupally
-      { id: 163, n: "Area Hospital Blood Bank Sathupally", a: "Sathupally Town", c: "Sathupally", s: "TS", lat: 17.2442, lng: 80.8802, ph: "+91-8742-266888", r: 4.0, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3000, rt: "28 min" },
-      // Palwancha
-      { id: 164, n: "Area Hospital Blood Bank Palwancha", a: "Palwancha Town", c: "Palwancha", s: "TS", lat: 17.5109, lng: 80.6977, ph: "+91-8744-266999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
-      // Manuguru
-      { id: 165, n: "SCCL Hospital Blood Bank Manuguru", a: "Manuguru Town", c: "Manuguru", s: "TS", lat: 17.9477, lng: 80.2031, ph: "+91-8744-277000", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "26 min" },
-      // Bhadrachalam
-      { id: 166, n: "Area Hospital Blood Bank Bhadrachalam", a: "Bhadrachalam Town", c: "Bhadrachalam", s: "TS", lat: 17.6724, lng: 80.8938, ph: "+91-8743-222333", r: 4.2, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 4000, rt: "25 min" },
-      { id: 167, n: "Red Cross Blood Bank Bhadrachalam", a: "Temple Road, Bhadrachalam", c: "Bhadrachalam", s: "TS", lat: 17.6750, lng: 80.8960, ph: "+91-8743-234567", r: 4.0, bt: ["A+", "B+", "O+"], h: "8AM-8PM", v: 1, td: 2800, rt: "30 min" },
-      // Asifabad
-      { id: 168, n: "Area Hospital Blood Bank Asifabad", a: "Asifabad Town", c: "Asifabad", s: "TS", lat: 19.3676, lng: 79.2810, ph: "+91-8734-266888", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2500, rt: "32 min" },
-      // Luxettipet
-      { id: 169, n: "Area Hospital Blood Bank Luxettipet", a: "Luxettipet Town", c: "Luxettipet", s: "TS", lat: 18.9285, lng: 79.5971, ph: "+91-8736-244666", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2200, rt: "34 min" },
-      // Bellampalli
-      { id: 170, n: "Area Hospital Blood Bank Bellampalli", a: "Bellampalli Town", c: "Bellampalli", s: "TS", lat: 18.9667, lng: 79.5000, ph: "+91-8736-222555", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "26 min" },
-      // Chennur
-      { id: 171, n: "Area Hospital Blood Bank Chennur", a: "Chennur Town", c: "Chennur", s: "TS", lat: 18.9602, lng: 79.5450, ph: "+91-8736-233666", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "28 min" },
-      // Peddapalli
-      { id: 172, n: "Govt Hospital Blood Bank Peddapalli", a: "Peddapalli Town", c: "Peddapalli", s: "TS", lat: 18.6156, lng: 79.3749, ph: "+91-8728-244777", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "26 min" },
-      // Sultanbad
-      { id: 173, n: "Area Hospital Blood Bank Sultanbad", a: "Sultanbad Town", c: "Sultanbad", s: "TS", lat: 18.6833, lng: 79.2667, ph: "+91-8728-255888", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2500, rt: "32 min" },
-      // Husnabad
-      { id: 174, n: "Area Hospital Blood Bank Husnabad", a: "Husnabad Town", c: "Husnabad", s: "TS", lat: 18.4333, lng: 79.2833, ph: "+91-8724-266999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
-      // Koratla
-      { id: 175, n: "Area Hospital Blood Bank Koratla", a: "Koratla Town", c: "Koratla", s: "TS", lat: 18.8224, lng: 78.7162, ph: "+91-8724-277000", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "26 min" },
-      // Banswada
-      { id: 176, n: "Area Hospital Blood Bank Banswada", a: "Banswada Town", c: "Banswada", s: "TS", lat: 18.3864, lng: 77.8797, ph: "+91-8468-233999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 3000, rt: "28 min" },
+</div>
+
+<div class="nav-btns" id="navBtns">
+  <button class="btn-back-step" id="backBtn" onclick="prevPage()" style="display:none">&#8592;</button>
+  <button class="btn-next" id="nextBtn" onclick="nextPage()">Continue &#8594;</button>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon">✅</div>
+  <h2>Request Sent!</h2>
+  <p>Your emergency request has been received. The nearest response unit has been alerted and is on the way.</p>
+  <div class="ref-box">
+    <div class="ref-label">Reference ID</div>
+    <div class="ref-num" id="refNum">—</div>
+  </div>
+  <div class="eta-strip">
+    <div class="eta-pill"><div class="ep-val" id="etaMin">~8</div><div class="ep-lbl">Min ETA</div></div>
+    <div class="eta-pill"><div class="ep-val">24/7</div><div class="ep-lbl">Support</div></div>
+    <div class="eta-pill"><div class="ep-val">🟢</div><div class="ep-lbl">Active</div></div>
+  </div>
+  <button class="btn-home" onclick="window.location.href='help_app_home.html'">&#8592; Back to Home</button>
+</div>
+
+<script>
+  let currentPage = 1;
+  const totalPages = 4;
+  let needType = '', bloodGroup = '', organs = [], severity = '';
+
+  function selectNeed(type) {
+    needType = type;
+    ['btnBlood','btnOrgan','btnBoth'].forEach(id =>
+      document.getElementById(id).classList.remove('sel-blood','sel-organ','sel-both'));
+    document.getElementById('bloodSection').classList.add('hidden');
+    document.getElementById('organSection').classList.add('hidden');
+    if (type === 'blood') {
+      document.getElementById('btnBlood').classList.add('sel-blood');
+      document.getElementById('bloodSection').classList.remove('hidden');
+    } else if (type === 'organ') {
+      document.getElementById('btnOrgan').classList.add('sel-organ');
+      document.getElementById('organSection').classList.remove('hidden');
+    } else {
+      document.getElementById('btnBoth').classList.add('sel-both');
+      document.getElementById('bloodSection').classList.remove('hidden');
+      document.getElementById('organSection').classList.remove('hidden');
+    }
+  }
+
+  function selectBlood(el) {
+    document.querySelectorAll('.blood-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    bloodGroup = el.textContent;
+  }
+
+  function toggleOrgan(el) {
+    el.classList.toggle('selected');
+    const name = el.textContent.trim();
+    if (el.classList.contains('selected')) { if (!organs.includes(name)) organs.push(name); }
+    else organs = organs.filter(o => o !== name);
+  }
+
+  function selectSev(el, val, cls) {
+    document.querySelectorAll('.sev-btn').forEach(b => b.classList.remove('sel-low','sel-med','sel-high','sel-crit'));
+    el.classList.add(cls);
+    severity = val;
+  }
+
+  function updateProgress(page) {
+    for (let i = 1; i <= 4; i++) {
+      const st = document.getElementById('st' + i);
+      st.classList.remove('active','done');
+      if (i < page) { st.classList.add('done'); st.querySelector('.step-dot').textContent = '✓'; }
+      else if (i === page) { st.classList.add('active'); st.querySelector('.step-dot').textContent = i; }
+      else st.querySelector('.step-dot').textContent = i;
+    }
+    for (let i = 1; i <= 3; i++) {
+      const ln = document.getElementById('ln' + i);
+      ln.classList.remove('done','active');
+      if (i < page) ln.classList.add('done');
+      else if (i === page) ln.classList.add('active');
+    }
+  }
+
+  function validate(page) {
+    if (page === 1) {
+      if (!document.getElementById('patientName').value.trim()) { alert('Please enter patient name.'); return false; }
+      if (!document.getElementById('patientPhone').value.trim()) { alert('Please enter phone number.'); return false; }
+      if (!document.getElementById('patientAge').value.trim()) { alert('Please enter patient age.'); return false; }
+      if (!document.getElementById('patientGender').value) { alert('Please select gender.'); return false; }
+      if (!document.getElementById('patientLocation').value.trim()) { alert('Please enter location.'); return false; }
+    }
+    if (page === 2) {
+      if (!needType) { alert('Please select emergency type.'); return false; }
+      if ((needType==='blood'||needType==='both') && !bloodGroup) { alert('Please select a blood group.'); return false; }
+      if ((needType==='organ'||needType==='both') && organs.length===0) { alert('Please select at least one organ.'); return false; }
+      if (!severity) { alert('Please select condition severity.'); return false; }
+    }
+    if (page === 3) {
+      if (!document.getElementById('ecName').value.trim()) { alert('Please enter emergency contact name.'); return false; }
+      if (!document.getElementById('ecPhone').value.trim()) { alert('Please enter emergency contact phone.'); return false; }
+    }
+    return true;
+  }
+
+  function buildSummary() {
+    const rows = [
+      { icon:'👤', label:'Patient Name', val: document.getElementById('patientName').value },
+      { icon:'📞', label:'Phone', val: document.getElementById('patientPhone').value },
+      { icon:'🎂', label:'Age / Gender', val: `${document.getElementById('patientAge').value} yrs · ${document.getElementById('patientGender').value}` },
+      { icon:'📍', label:'Location', val: document.getElementById('patientLocation').value },
+      { icon:'🆘', label:'Need Type', val: needType.toUpperCase() },
     ];
+    if (bloodGroup) rows.push({ icon:'🩸', label:'Blood Group', val: bloodGroup });
+    if (organs.length) rows.push({ icon:'🫀', label:'Organs', val: organs.join(', ') });
+    rows.push({ icon:'⚠️', label:'Severity', val: severity.charAt(0).toUpperCase()+severity.slice(1) });
+    if (document.getElementById('ecName').value)
+      rows.push({ icon:'🧑‍⚕️', label:'Emergency Contact', val: `${document.getElementById('ecName').value} — ${document.getElementById('ecPhone').value}` });
+    document.getElementById('summaryList').innerHTML = rows.map(r =>
+      `<div class="sum-row"><div class="sum-icon">${r.icon}</div><div><div class="sum-label">${r.label}</div><div class="sum-val">${r.val}</div></div></div>`
+    ).join('');
+  }
 
-    // ─── CITY COORDINATES ──────────────────────────────────────────
-    const CL = {
-      "Visakhapatnam": { lat: 17.7231, lng: 83.3072 }, "Vijayawada": { lat: 16.5062, lng: 80.6480 },
-      "Guntur": { lat: 16.3067, lng: 80.4365 }, "Nellore": { lat: 14.4426, lng: 79.9865 },
-      "Tirupati": { lat: 13.6288, lng: 79.4192 }, "Kakinada": { lat: 16.9891, lng: 82.2475 },
-      "Rajahmundry": { lat: 17.0005, lng: 81.8040 }, "Kadapa": { lat: 14.4673, lng: 78.8242 },
-      "Anantapur": { lat: 14.6819, lng: 77.6006 }, "Kurnool": { lat: 15.8281, lng: 78.0373 },
-      "Eluru": { lat: 16.7107, lng: 81.0953 }, "Ongole": { lat: 15.5057, lng: 80.0499 },
-      "Chittoor": { lat: 13.2172, lng: 79.1003 }, "Machilipatnam": { lat: 16.1875, lng: 81.1389 },
-      "Tenali": { lat: 16.2428, lng: 80.6474 }, "Proddatur": { lat: 14.7502, lng: 78.5481 },
-      "Bhimavaram": { lat: 16.5449, lng: 81.5212 }, "Srikakulam": { lat: 18.2949, lng: 83.8938 },
-      "Vizianagaram": { lat: 18.1124, lng: 83.3953 }, "Nandyal": { lat: 15.4777, lng: 78.4836 },
-      "Hindupur": { lat: 13.8283, lng: 77.4917 }, "Adoni": { lat: 15.6267, lng: 77.2750 },
-      "Kandukur": { lat: 15.2154, lng: 79.9043 }, "Narasaraopet": { lat: 16.2349, lng: 80.0490 },
-      "Tadepalligudem": { lat: 16.8143, lng: 81.5270 }, "Gudivada": { lat: 16.4345, lng: 80.9929 },
-      "Narasapuram": { lat: 16.4351, lng: 81.6945 }, "Palasa": { lat: 18.7725, lng: 84.4159 },
-      "Bobbili": { lat: 18.5735, lng: 83.3621 }, "Tadipatri": { lat: 14.9083, lng: 78.0110 },
-      "Dharmavaram": { lat: 14.4118, lng: 77.7212 }, "Madanapalle": { lat: 13.5504, lng: 78.5024 },
-      "Puttaparthi": { lat: 14.1665, lng: 77.8199 }, "Bapatla": { lat: 15.9041, lng: 80.4670 },
-      "Markapur": { lat: 15.7356, lng: 79.2720 }, "Kavali": { lat: 14.9138, lng: 79.9932 },
-      "Srikalahasti": { lat: 13.7499, lng: 79.6981 }, "Narsapur": { lat: 16.4351, lng: 81.6945 },
-      "Repalle": { lat: 16.0215, lng: 80.8270 }, "Chirala": { lat: 15.8267, lng: 80.3529 },
-      "Narasannapeta": { lat: 18.4121, lng: 84.0448 }, "Rajam": { lat: 18.4667, lng: 83.6500 },
-      "Tuni": { lat: 17.3574, lng: 82.5483 }, "Amalapuram": { lat: 16.5773, lng: 82.0055 },
-      "Tanuku": { lat: 16.7540, lng: 81.6804 }, "Palakollu": { lat: 16.5188, lng: 81.7334 },
-      "Jangareddygudem": { lat: 17.1290, lng: 81.3016 }, "Nuzvid": { lat: 16.7896, lng: 80.8460 },
-      "Mandapeta": { lat: 16.8696, lng: 81.9260 }, "Peddapuram": { lat: 17.0833, lng: 82.1333 },
-      "Hyderabad": { lat: 17.3850, lng: 78.4867 }, "Warangal": { lat: 17.9784, lng: 79.5941 },
-      "Nizamabad": { lat: 18.6725, lng: 78.0941 }, "Karimnagar": { lat: 18.4386, lng: 79.1288 },
-      "Khammam": { lat: 17.2473, lng: 80.1514 }, "Ramagundam": { lat: 18.7560, lng: 79.4745 },
-      "Mahbubnagar": { lat: 16.7448, lng: 77.9875 }, "Nalgonda": { lat: 17.0575, lng: 79.2675 },
-      "Adilabad": { lat: 19.6640, lng: 78.5320 }, "Suryapet": { lat: 17.1407, lng: 79.6224 },
-      "Miryalaguda": { lat: 16.8727, lng: 79.5626 }, "Siddipet": { lat: 18.1018, lng: 78.8521 },
-      "Jagtial": { lat: 18.7939, lng: 78.9167 }, "Mancherial": { lat: 18.8699, lng: 79.4592 },
-      "Nirmal": { lat: 19.0959, lng: 78.3455 }, "Kothagudem": { lat: 17.5521, lng: 80.6178 },
-      "Bhongir": { lat: 17.5130, lng: 78.8893 }, "Vikarabad": { lat: 17.3364, lng: 77.9046 },
-      "Sangareddy": { lat: 17.6257, lng: 78.0858 }, "Medak": { lat: 18.0457, lng: 78.2667 },
-      "Wanaparthy": { lat: 16.3622, lng: 78.0636 }, "Narsampet": { lat: 17.9299, lng: 79.8940 },
-      "Tandur": { lat: 17.2481, lng: 77.5757 }, "Bodhan": { lat: 18.6640, lng: 77.8844 },
-      "Kamareddy": { lat: 18.3238, lng: 78.3395 }, "Zaheerabad": { lat: 17.6826, lng: 77.6060 },
-      "Jadcherla": { lat: 16.7600, lng: 78.1369 }, "Bhainsa": { lat: 19.0966, lng: 77.9574 },
-      "Metpally": { lat: 18.8246, lng: 78.5830 }, "Yellandu": { lat: 17.5978, lng: 80.3329 },
-      "Narayanpet": { lat: 16.7431, lng: 77.4955 }, "Gadwal": { lat: 16.2334, lng: 77.7991 },
-      "Nagarkurnool": { lat: 16.4800, lng: 78.3230 }, "Achampet": { lat: 16.1600, lng: 78.8980 },
-      "Kalwakurthy": { lat: 16.5283, lng: 78.4982 }, "Mahabuabad": { lat: 17.6004, lng: 80.0013 },
-      "Dornakal": { lat: 17.4333, lng: 80.1500 }, "Sathupally": { lat: 17.2442, lng: 80.8802 },
-      "Palwancha": { lat: 17.5109, lng: 80.6977 }, "Manuguru": { lat: 17.9477, lng: 80.2031 },
-      "Bhadrachalam": { lat: 17.6724, lng: 80.8938 }, "Asifabad": { lat: 19.3676, lng: 79.2810 },
-      "Luxettipet": { lat: 18.9285, lng: 79.5971 }, "Bellampalli": { lat: 18.9667, lng: 79.5000 },
-      "Chennur": { lat: 18.9602, lng: 79.5450 }, "Peddapalli": { lat: 18.6156, lng: 79.3749 },
-      "Sultanbad": { lat: 18.6833, lng: 79.2667 }, "Husnabad": { lat: 18.4333, lng: 79.2833 },
-      "Koratla": { lat: 18.8224, lng: 78.7162 }, "Banswada": { lat: 18.3864, lng: 77.8797 }
-    };
+  function nextPage() {
+    if (!validate(currentPage)) return;
+    if (currentPage === totalPages) { submitForm(); return; }
+    document.getElementById('page'+currentPage).classList.remove('active');
+    currentPage++;
+    const pg = document.getElementById('page'+currentPage);
+    pg.classList.add('active');
+    pg.classList.remove('fade-in'); void pg.offsetWidth; pg.classList.add('fade-in');
+    if (currentPage === 4) buildSummary();
+    updateProgress(currentPage);
+    document.getElementById('backBtn').style.display = currentPage > 1 ? 'flex' : 'none';
+    document.getElementById('nextBtn').textContent = currentPage === 4 ? '🚨 Submit Emergency' : 'Continue →';
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
 
-    // ─── STATE ─────────────────────────────────────────────────────
-    let uI = { name: '', bt: '', phone: '', em: 'yes', city: '' };
-    let uL = null, nBB = [], selB = null;
+  function prevPage() {
+    if (currentPage === 1) return;
+    document.getElementById('page'+currentPage).classList.remove('active');
+    currentPage--;
+    document.getElementById('page'+currentPage).classList.add('active');
+    updateProgress(currentPage);
+    document.getElementById('backBtn').style.display = currentPage > 1 ? 'flex' : 'none';
+    document.getElementById('nextBtn').textContent = 'Continue →';
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
 
-    // ─── THREE.JS ──────────────────────────────────────────────────
-    function initThree() {
-      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, .1, 1000);
-      const ren = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-      ren.setSize(innerWidth, innerHeight); ren.setClearColor(0, 0);
-      document.getElementById('three-canvas').appendChild(ren.domElement);
-      const drops = [], geo = new THREE.SphereGeometry(.3, 16, 16);
-      for (let i = 0; i < 25; i++) {
-        const m = new THREE.MeshPhongMaterial({ color: [0xff0000, 0xff3333, 0xff6666][i % 3], transparent: true, opacity: .25, shininess: 100 });
-        const mesh = new THREE.Mesh(geo, m);
-        mesh.position.set(Math.random() * 40 - 20, Math.random() * 40 - 20, Math.random() * 30 - 15);
-        drops.push({ mesh, sp: .015 + Math.random() * .025, off: Math.random() * Math.PI * 2 });
-        sc.add(mesh);
-      }
-      sc.add(new THREE.AmbientLight(0xffffff, .4));
-      const pl = new THREE.PointLight(0xff0000, 1, 100); pl.position.set(10, 10, 10); sc.add(pl);
-      cam.position.z = 15;
-      (function loop() {
-        requestAnimationFrame(loop);
-        drops.forEach(d => { d.mesh.position.y = Math.sin(Date.now() * .001 * d.sp + d.off) * 10; d.mesh.rotation.x += .008; d.mesh.rotation.y += .008; });
-        ren.render(sc, cam);
-      })();
-      window.addEventListener('resize', () => { cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); ren.setSize(innerWidth, innerHeight); });
-    }
-
-    // ─── HELPERS ───────────────────────────────────────────────────
-    function dist(a, b, c, d) {
-      const R = 6371, dL = (c - a) * Math.PI / 180, dG = (d - b) * Math.PI / 180;
-      const x = Math.sin(dL / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dG / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
-    }
-    function setEm(v, el) { uI.em = v; document.querySelectorAll('.rbtn').forEach(b => b.classList.remove('on')); el.classList.add('on'); }
-    function goPage(p) { document.querySelectorAll('.page').forEach(x => x.classList.remove('active')); document.getElementById(p + 'Page').classList.add('active'); }
-
-    // ─── SEARCH ────────────────────────────────────────────────────
-    function doSearch() {
-      const nm = document.getElementById('uName').value.trim();
-      const bt = document.getElementById('uBlood').value;
-      const ph = document.getElementById('uPhone').value.trim();
-      const ct = document.getElementById('citySearch').value.trim();
-      const err = document.getElementById('errMsg');
-      if (!nm || !bt || !ph || !ct) { err.textContent = 'Please fill all required fields'; err.style.display = 'block'; return; }
-      uI = { name: nm, bt, phone: ph, em: uI.em, city: ct };
-      err.style.display = 'none';
-      const btn = event.target; btn.disabled = true;
-      btn.innerHTML = '<div class="spinner"></div> Searching...';
-      const rst = () => { btn.disabled = false; btn.innerHTML = '<svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Find Nearby Blood Banks'; };
-      // Use selected city coordinates (geolocation option removed)
-      const co = CL[ct];
-      if (!co) { err.textContent = 'City not found.'; err.style.display = 'block'; rst(); return; }
-      uL = { lat: co.lat, lng: co.lng };
-      nBB = BB.filter(b => b.c === ct).map(b => ({ ...b, distance: dist(uL.lat, uL.lng, b.lat, b.lng) })).sort((a, b) => a.distance - b.distance);
-      if (nBB.length === 0) {
-        // fallback: show nearest from all
-        nBB = BB.map(b => ({ ...b, distance: dist(uL.lat, uL.lng, b.lat, b.lng) })).sort((a, b) => a.distance - b.distance).slice(0, 10);
-      }
-      renderCards(ct, false); goPage('search'); rst();
-    }
-
-    // ─── RENDER CARDS ──────────────────────────────────────────────
-    function renderCards(loc, isCur) {
-      document.getElementById('resCount').textContent = `Found ${nBB.length} blood bank${nBB.length !== 1 ? 's' : ''} near ${loc}`;
-      document.getElementById('locInfo').style.display = isCur ? 'block' : 'none';
-      document.getElementById('cardsGrid').innerHTML = nBB.map((b, i) => `
-  <div class="bcard aSlide" style="animation-delay:${Math.min(i * .04, .6)}s" onclick="showDet(${b.id})">
-    <h3 class="bname">${b.n}</h3>
-    <div class="tag-row">
-      <span class="tag ${b.s === 'TS' ? 'tag-ts' : 'tag-ap'}">${b.s === 'TS' ? '🔵 Telangana' : '🔴 AP'}</span>
-      <span class="tag tag-city">${b.c}</span>
-    </div>
-    <div class="stars">
-      <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      ${b.r}${b.v ? ` <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>` : ''}
-    </div>
-    <div class="irow"><svg class="iico" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${b.a}</div>
-    <div class="irow"><svg class="iico" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg><strong>${b.distance.toFixed(1)} km away</strong></div>
-    <div class="irow"><svg class="iico" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${b.h} · ~${b.rt}</div>
-    <div class="btypes">${b.bt.slice(0, 5).map(t => `<span class="bt ${t === uI.bt ? 'hi' : ''}">${t}</span>`).join('')}${b.bt.length > 5 ? `<span class="bt">+${b.bt.length - 5}</span>` : ''}</div>
-    <div style="display:flex; gap:10px;">
-      <a href="tel:${b.ph}" class="call-btn" style="flex:1" onclick="event.stopPropagation()">
-        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Call
-      </a>
-      <a href="https://www.eraktkosh.com/BLDAHIMS/bloodbank/donorRegistration.cnt" target="_blank" class="call-btn" style="flex:1; background:#059669" onclick="event.stopPropagation()">
-        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
-        Register
-      </a>
-    </div>
-  </div>`).join('');
-    }
-
-    // ─── DETAIL ────────────────────────────────────────────────────
-    function showDet(id) {
-      selB = nBB.find(b => b.id === id); if (!selB) return;
-      const sl = selB.s === 'TS' ? '🔵 Telangana' : '🔴 Andhra Pradesh';
-      document.getElementById('detContent').innerHTML = `
-  <div class="det-card aFade">
-    <div class="det-hdr">
-      <h1 class="det-title">${selB.n}</h1>
-      <div class="badge-row">
-        <div class="bdg bdg-rat"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${selB.r}/5</div>
-        ${selB.v ? '<div class="bdg bdg-ver"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verified</div>' : ''}
-        <div class="bdg bdg-st">${sl}</div>
-      </div>
-    </div>
-    <div class="det-body">
-      <div class="det-grid">
-        <div>
-          <div class="dsec">
-            <h3 class="dtitle"><svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Location</h3>
-            <div class="drow"><span class="dlbl">Address:</span><span>${selB.a}</span></div>
-            <div class="drow"><span class="dlbl">City/State:</span><span>${selB.c}, ${selB.s === 'TS' ? 'Telangana' : 'Andhra Pradesh'}</span></div>
-            <div class="drow"><span class="dlbl">Distance:</span><strong style="color:#f87171">${selB.distance.toFixed(1)} km</strong></div>
-            <div class="drow"><span class="dlbl">Response:</span><span>~${selB.rt}</span></div>
-          </div>
-          <div class="dsec">
-            <h3 class="dtitle"><svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Hours</h3>
-            <p style="color:#d1d5db;font-size:.95rem">${selB.h}</p>
-          </div>
-          <div class="dsec">
-            <h3 class="dtitle"><svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>Statistics</h3>
-            <div class="sbox">
-              <div class="srow"><span style="color:#9ca3af">Total Donations:</span><strong>${selB.td.toLocaleString()}</strong></div>
-              <div class="srow"><span style="color:#9ca3af">Rating:</span><strong>${selB.r}/5.0</strong></div>
-              <div class="srow"><span style="color:#9ca3af">Phone:</span><a href="tel:${selB.ph}" style="color:#f87171;text-decoration:none">${selB.ph}</a></div>
-              <div class="srow"><span style="color:#9ca3af">Status:</span><strong style="color:#4ade80">Active</strong></div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="dsec">
-            <h3 class="dtitle"><svg class="ico-lg" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>Blood Types Available</h3>
-            <div class="bgrid">${selB.bt.map(t => `<div class="bbox ${t === uI.bt ? 'hi' : ''}">${t}</div>`).join('')}</div>
-            ${uI.bt && selB.bt.includes(uI.bt) ? `<div class="ok-msg"><svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><strong>${uI.bt} is available here!</strong></div>` : ''}
-          </div>
-          <div class="act-btns" style="margin-top:16px">
-            <a href="tel:${selB.ph}" class="btn-red" style="margin-top:0;text-decoration:none">
-              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-              Call Blood Bank
-            </a>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${selB.lat},${selB.lng}" target="_blank" class="btn-grey">
-              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-              Directions
-            </a>
-            <a href="https://www.eraktkosh.com/BLDAHIMS/bloodbank/donorRegistration.cnt" target="_blank" class="btn-red" style="background:#059669; border-color:#059669; margin-top:0; text-decoration:none">
-              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-              Pledge to Donate
-            </a>
-          </div>
-        </div>
-      </div>
-      <div class="map-wrap">
-        <h3 class="dtitle">📍 Location on Map</h3>
-        <div class="map-frame">
-          <iframe src="https://maps.google.com/maps?q=${selB.lat},${selB.lng}&z=15&output=embed" allowfullscreen loading="lazy"></iframe>
-        </div>
-      </div>
-    </div>
-  </div>`;
-      goPage('detail');
-    }
-
-    window.addEventListener('load', initThree);
-  </script>
-  <script>
-    // populate datalist of cities from CL object
-    window.addEventListener('load', function () {
-      try {
-        const dl = document.getElementById('citiesList');
-        if (!dl) return;
-        Object.keys(CL).forEach(city => {
-          const o = document.createElement('option'); o.value = city; dl.appendChild(o);
-        });
-      } catch (e) { console.warn('Could not populate cities list', e); }
-    });
-  </script>
+  function submitForm() {
+    document.getElementById('progressRow').style.display = 'none';
+    document.getElementById('page4').classList.remove('active');
+    document.getElementById('navBtns').style.display = 'none';
+    document.querySelector('.hero-strip').style.display = 'none';
+    const ref = 'HLP-' + Math.floor(100000 + Math.random()*900000);
+    const eta = Math.floor(5 + Math.random()*10);
+    document.getElementById('refNum').textContent = ref;
+    document.getElementById('etaMin').textContent = '~' + eta;
+    document.getElementById('successScreen').classList.add('active');
+    window.scrollTo({ top:0, behavior:'smooth' });
+  }
+</script>
 </body>
-
 </html>

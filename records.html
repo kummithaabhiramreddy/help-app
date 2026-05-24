@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>My Records - HELP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #FF2D3B;
+      --bg: #0A0A0F;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --text: #F2F2F5;
+      --muted: rgba(242,242,245,0.45);
+      --cyan: #00E5FF;
+      --green: #00FF88;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 420px;
+      margin: 0 auto;
+      overflow-x: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .container {
+      padding: 20px 24px;
+      padding-bottom: 100px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--cyan);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--muted);
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.blood {
+      background: rgba(255, 45, 59, 0.2);
+      color: var(--red);
+    }
+
+    .badge.organ {
+      background: rgba(0, 229, 255, 0.2);
+      color: var(--cyan);
+    }
+
+    .history-item {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .history-type {
+      font-weight: 600;
+      color: var(--cyan);
+    }
+
+    .history-date {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .history-details {
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 420px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 10px 0 24px;
+      z-index: 50;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 6px 0;
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--red);
+    }
+
+    .nav-icon {
+      font-size: 22px;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="back-btn" onclick="window.location.href='home.html'">←</div>
+  <h1>My Records</h1>
+</div>
+
+<div class="container">
+  <div id="recordsContent">
+    <div class="loading">
+      <div style="font-size: 24px; margin-bottom: 16px;">⏳</div>
+      <div>Loading your records...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="nav-item" onclick="navTo('index')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </div>
+  <div class="nav-item" onclick="navTo('map')">
+    <div class="nav-icon">📍</div>
+    <div class="nav-label">Map</div>
+  </div>
+  <div class="nav-item active" onclick="navTo('records')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">Records</div>
+  </div>
+  <div class="nav-item" onclick="navTo('settings')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Settings</div>
+  </div>
+</nav>
+
+<script>
+  const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? 'http://localhost:3000' 
+    : '';
+
+  async function loadRecords() {
+    const userId = localStorage.getItem('userId');
+    if (!userId) {
+      document.getElementById('recordsContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🔐</div>
+          <div>Please log in to view your records</div>
+          <div style="margin-top: 20px;">
+            <a href="form.html" style="color: var(--red); text-decoration: none;">Register / Login</a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+      const data = await res.json();
+      
+      if (!res.ok || !data.donor) {
+        throw new Error('Donor not found');
+      }
+
+      const donor = data.donor;
+      displayRecords(donor);
+    } catch (err) {
+      console.error('Error loading records:', err);
+      document.getElementById('recordsContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">⚠️</div>
+          <div>Unable to load records</div>
+          <div style="margin-top: 10px; font-size: 12px; color: var(--muted);">${err.message}</div>
+        </div>
+      `;
+    }
+  }
+
+  function displayRecords(donor) {
+    const donatedCount = donor.donated_count || 0;
+    const receivedCount = donor.received_count || 0;
+    const donatedDetail = donor.donated_detail ? JSON.parse(donor.donated_detail) : [];
+    const receivedDetail = donor.received_detail ? JSON.parse(donor.received_detail) : [];
+
+    let html = `
+      <!-- Donor Info Card -->
+      <div class="card">
+        <div class="card-title">Donor Information</div>
+        <div class="info-row">
+          <span class="info-label">Name</span>
+          <span class="info-value">${donor.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Blood Group</span>
+          <span class="badge blood">${donor.bloodgroup || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Type</span>
+          <span class="badge ${donor.type === 'Blood' ? 'blood' : 'organ'}">${donor.type || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">City</span>
+          <span class="info-value">${donor.city || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Registered</span>
+          <span class="info-value">${donor.registeredOn || 'N/A'}</span>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${donatedCount}</div>
+          <div class="stat-label">Times Donated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${receivedCount}</div>
+          <div class="stat-label">Times Received</div>
+        </div>
+      </div>
+    `;
+
+    // Blood Donation History
+    if (donatedCount > 0 && donatedDetail.length > 0) {
+      html += `
+        <div class="card">
+          <div class="card-title">🩸 Blood Donation History</div>
+      `;
+      donatedDetail.forEach((item, idx) => {
+        html += `
+          <div class="history-item">
+            <div class="history-header">
+              <div class="history-type">Blood Group: ${item.bloodGroup}</div>
+              <div class="history-date">${new Date(item.date).toLocaleDateString()}</div>
+            </div>
+            <div class="history-details">
+              ${item.recipient ? `<div>Recipient: ${item.recipient}</div>` : ''}
+              ${item.hospital ? `<div>Hospital: ${item.hospital}</div>` : ''}
+              ${item.notes ? `<div>Notes: ${item.notes}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    } else if (donatedCount === 0) {
+      html += `
+        <div class="card">
+          <div class="card-title">🩸 Blood Donation History</div>
+          <div class="empty-state" style="padding: 20px;">
+            <div>No donations yet</div>
+            <div style="font-size: 12px; margin-top: 10px;">Visit a blood bank to make your first donation</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Blood Received History
+    if (receivedCount > 0 && receivedDetail.length > 0) {
+      html += `
+        <div class="card">
+          <div class="card-title">🏥 Blood Received History</div>
+      `;
+      receivedDetail.forEach((item) => {
+        html += `
+          <div class="history-item">
+            <div class="history-header">
+              <div class="history-type">Blood Group: ${item.bloodGroup}</div>
+              <div class="history-date">${new Date(item.date).toLocaleDateString()}</div>
+            </div>
+            <div class="history-details">
+              ${item.donor ? `<div>Donor: ${item.donor}</div>` : ''}
+              ${item.hospital ? `<div>Hospital: ${item.hospital}</div>` : ''}
+              ${item.reason ? `<div>Reason: ${item.reason}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    } else if (receivedCount === 0) {
+      html += `
+        <div class="card">
+          <div class="card-title">🏥 Blood Received History</div>
+          <div class="empty-state" style="padding: 20px;">
+            <div>No blood received</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Organ Information
+    if (donor.organs) {
+      const organs = donor.organs.split(',').map(o => o.trim());
+      html += `
+        <div class="card">
+          <div class="card-title">🫀 Registered Organs</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      `;
+      organs.forEach(organ => {
+        html += `<span class="badge organ">${organ}</span>`;
+      });
+      html += `
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('recordsContent').innerHTML = html;
+  }
+
+  function navTo(page) {
+    switch(page) {
+      case 'index':
+        window.location.href = 'index.html';
+        break;
+      case 'map':
+        window.location.href = 'bloodbanks.html';
+        break;
+      case 'records':
+        window.location.href = 'records.html';
+        break;
+      case 'settings':
+        window.location.href = 'settings.html';
+        break;
+    }
+  }
+
+  loadRecords();
+</script>
+
+</body>
+</html>

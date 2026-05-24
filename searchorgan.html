@@ -874,6 +874,79 @@
       margin-top: 60px
     }
 
+    @media(max-width: 768px) {
+      nav {
+        padding: 14px 18px;
+      }
+
+      .page-header {
+        padding: 120px 16px 30px;
+      }
+
+      .page-header h1 {
+        font-size: clamp(2rem, 10vw, 3rem);
+      }
+
+      .page-header p {
+        max-width: 100%;
+        margin: 16px auto 0;
+        padding: 0 8px;
+      }
+
+      .breadcrumb {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .search-glass {
+        padding: 24px 16px;
+      }
+
+      .search-wrap {
+        padding-bottom: 30px;
+      }
+
+      .city-input,
+      .sfield,
+      .search-btn,
+      .choose-file-btn {
+        width: 100%;
+      }
+
+      .o-chip {
+        flex: 1 1 100%;
+        min-width: 0;
+        justify-content: center;
+      }
+
+      .results-section {
+        padding: 0 16px;
+      }
+
+      .results-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .result-grid {
+        gap: 18px;
+      }
+
+      .result-card {
+        padding: 22px;
+      }
+
+      .rc-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        padding: 24px 14px;
+      }
+    }
+
     /* ── From file 2: card fade-out on request ── */
     .result-card.fade-out {
       opacity: 0;

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Settings - HELP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #FF2D3B;
+      --bg: #0A0A0F;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --text: #F2F2F5;
+      --muted: rgba(242,242,245,0.45);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 420px;
+      margin: 0 auto;
+      overflow-x: hidden;
+    }
+
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .container {
+      padding: 20px 24px;
+      padding-bottom: 100px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .toggle {
+      width: 44px;
+      height: 24px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+    }
+
+    .toggle.active {
+      background: var(--red);
+    }
+
+    .toggle::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+    }
+
+    .toggle.active::after {
+      left: 22px;
+    }
+
+    .danger-btn {
+      width: 100%;
+      padding: 14px;
+      background: rgba(255,45,59,0.15);
+      border: 1px solid rgba(255,45,59,0.3);
+      color: var(--red);
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .danger-btn:hover {
+      background: rgba(255,45,59,0.25);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 420px;
+      background: rgba(10,10,15,0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 10px 0 24px;
+      z-index: 50;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 6px 0;
+    }
+
+    .nav-item.active .nav-icon {
+      color: var(--red);
+    }
+
+    .nav-icon {
+      font-size: 22px;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .nav-item.active .nav-label {
+      color: var(--red);
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="back-btn" onclick="window.location.href='home.html'">←</div>
+  <h1>Settings</h1>
+</div>
+
+<div class="container">
+  <div class="card">
+    <div class="card-title">Notifications</div>
+    <div class="setting-row">
+      <span class="setting-label">Emergency Alerts</span>
+      <div class="toggle active" onclick="toggleSetting(this)"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Blood Bank Updates</span>
+      <div class="toggle active" onclick="toggleSetting(this)"></div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Donor Requests</span>
+      <div class="toggle active" onclick="toggleSetting(this)"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Account</div>
+    <div class="setting-row">
+      <span class="setting-label">User ID</span>
+      <span style="font-size: 12px; color: var(--muted);" id="userIdDisplay">...</span>
+    </div>
+    <div style="margin-top: 16px;">
+      <button class="danger-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="card" style="text-align: center; color: var(--muted); font-size: 12px;">
+    <div>HELP App v1.0</div>
+    <div style="margin-top: 8px;">© 2026 All Rights Reserved</div>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <div class="nav-item" onclick="navTo('index')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </div>
+  <div class="nav-item" onclick="navTo('map')">
+    <div class="nav-icon">📍</div>
+    <div class="nav-label">Map</div>
+  </div>
+  <div class="nav-item" onclick="navTo('records')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">Records</div>
+  </div>
+  <div class="nav-item active" onclick="navTo('settings')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Settings</div>
+  </div>
+</nav>
+
+<script>
+  function toggleSetting(el) {
+    el.classList.toggle('active');
+  }
+
+  function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userEmail');
+      window.location.href = 'home.html';
+    }
+  }
+
+  function navTo(page) {
+    switch(page) {
+      case 'index':
+        window.location.href = 'index.html';
+        break;
+      case 'map':
+        window.location.href = 'bloodbanks.html';
+        break;
+      case 'records':
+        window.location.href = 'records.html';
+        break;
+      case 'settings':
+        window.location.href = 'settings.html';
+        break;
+    }
+  }
+
+  // Display user ID
+  const userId = localStorage.getItem('userId');
+  document.getElementById('userIdDisplay').textContent = userId ? userId.substring(0, 8) + '...' : 'Not logged in';
+</script>
+
+</body>
+</html>
