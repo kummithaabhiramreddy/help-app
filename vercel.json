@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "server.js": {
+      "includeFiles": ["db/**", "emailService.js"]
+    }
+  },
   "builds": [
     {
       "src": "*.html",
@@ -7,10 +12,7 @@
     },
     {
       "src": "server.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["db/**", "emailService.js"]
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
