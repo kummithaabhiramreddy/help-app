@@ -933,8 +933,10 @@
 
   let routingControl = null;
   let userMarker = null;
+  let fallbackLine = null;
+  let fallbackLineBg = null;
 
-  if (route) {
+  if (route && urlParams.get('saddr') && urlParams.get('daddr')) {
     const saddr = urlParams.get('saddr').split(',');
     const daddr = urlParams.get('daddr').split(',');
     const startLatLng = L.latLng(parseFloat(saddr[0]), parseFloat(saddr[1]));
@@ -966,17 +968,57 @@
 
     // Draw route immediately from saddr to daddr
     function drawRoute(fromLL) {
-      if (routingControl) map.removeControl(routingControl);
+      if (routingControl) {
+        try {
+          map.removeControl(routingControl);
+        } catch (e) {
+          console.warn('Error removing routing control:', e);
+        }
+      }
+
+      // Draw the premium straight fallback line by default (instantly visible)
+      if (fallbackLineBg) { try { map.removeLayer(fallbackLineBg); } catch(e){} }
+      if (fallbackLine) { try { map.removeLayer(fallbackLine); } catch(e){} }
+
+      // Background glow
+      fallbackLineBg = L.polyline([fromLL, destLatLng], {
+        color: '#FF2D3B',
+        weight: 10,
+        opacity: 0.15,
+        lineJoin: 'round'
+      }).addTo(map);
+
+      // Dash pattern overlay
+      fallbackLine = L.polyline([fromLL, destLatLng], {
+        color: '#FF2D3B',
+        weight: 4,
+        opacity: 0.8,
+        dashArray: '8, 12',
+        lineJoin: 'round'
+      }).addTo(map);
+
+      // Attempt precision routing using Leaflet Routing Machine
       routingControl = L.Routing.control({
         waypoints: [fromLL, destLatLng],
         routeWhileDragging: false,
         addWaypoints: false,
         show: false,
         lineOptions: {
-          styles: [{color: '#4285F4', opacity: 0.9, weight: 6}]
+          styles: [{color: '#00E5FF', opacity: 0.85, weight: 6}] // Cyan road path
         },
         createMarker: function() { return null; }
       }).addTo(map);
+
+      routingControl.on('routesfound', function(e) {
+        console.log('Precise road route found.');
+        // Cleanly remove the straight fallback lines when precise road route is computed successfully
+        if (fallbackLine) { try { map.removeLayer(fallbackLine); } catch(e){} fallbackLine = null; }
+        if (fallbackLineBg) { try { map.removeLayer(fallbackLineBg); } catch(e){} fallbackLineBg = null; }
+      });
+
+      routingControl.on('routingerror', function(e) {
+        console.warn('OSRM routing failed. Using active straight-line fallback.', e);
+      });
     }
 
     drawRoute(startLatLng);
@@ -1014,6 +1056,27 @@
           
           startBtn.textContent = 'Stop Navigation';
           startBtn.style.background = '#FF2D3B';
+
+          // Update straight fallback lines instantly without network requests
+          if (fallbackLine) {
+            fallbackLine.setLatLngs([latlng, destLatLng]);
+          }
+          if (fallbackLineBg) {
+            fallbackLineBg.setLatLngs([latlng, destLatLng]);
+          }
+
+          // Throttle precision routing updates to once every 15 seconds to prevent spamming OSRM
+          const now = Date.now();
+          if (!window.lastRouteUpdate || (now - window.lastRouteUpdate > 15000)) {
+            window.lastRouteUpdate = now;
+            if (routingControl) {
+              try {
+                routingControl.setWaypoints([latlng, destLatLng]);
+              } catch (e) {
+                console.warn('Failed to update precision routing:', e);
+              }
+            }
+          }
 
           // Arrived check (within 50m)
           if (latlng.distanceTo(destLatLng) < 50) {
