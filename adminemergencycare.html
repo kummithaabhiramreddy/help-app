@@ -260,6 +260,7 @@ td{padding:12px 14px;font-size:13px;vertical-align:middle}
   .mob-search-btn,.mob-search-bar,.bottom-nav,.card-list,.sheet-overlay,.detail-sheet,.filter-bar{display:none!important}
   .filter-row{display:flex}
 }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -269,7 +270,6 @@ td{padding:12px 14px;font-size:13px;vertical-align:middle}
   <div class="logo">
     <div class="logo-badge"><div class="pulse"></div><span>Live</span></div>
     <h1>EmergCare<br>Admin</h1>
-    <p>v2.4.1 · TELANGANA</p>
   </div>
   <nav class="nav">
     <div class="nav-label">Main</div>
@@ -486,7 +486,9 @@ td{padding:12px 14px;font-size:13px;vertical-align:middle}
 
 <script>
 let patients = [];
-let nextId=8, selectedId=null, sevFilter='all';
+let nextId=1000, selectedId=null, sevFilter='all';
+let isLoading = false;
+let refreshInterval = null;
 
 const ini = n => (n || '').split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
 const titleCase = s => s ? `${s.charAt(0).toUpperCase()}${s.slice(1).toLowerCase()}` : '';
@@ -497,9 +499,34 @@ const safeParseJSON = (value, fallback = {}) => {
   try { return JSON.parse(value || '{}'); } catch { return fallback; }
 };
 
+function buildDetailsText(rawDetails, parsedDetails) {
+  // If rawDetails is a plain descriptive string (not JSON), use it directly
+  if (typeof rawDetails === 'string' && rawDetails.trim()) {
+    const trimmed = rawDetails.trim();
+    // If it doesn't look like JSON, it's already a human-readable string
+    if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) {
+      return trimmed;
+    }
+  }
+  // Build a summary from the parsed JSON fields
+  const parts = [];
+  if (parsedDetails.location) parts.push('📍 ' + parsedDetails.location);
+  if (parsedDetails.age) parts.push('Age: ' + parsedDetails.age);
+  if (parsedDetails.gender) parts.push(parsedDetails.gender);
+  if (parsedDetails.severity) parts.push('Severity: ' + parsedDetails.severity);
+  if (parsedDetails.allergies) parts.push('Allergies: ' + parsedDetails.allergies);
+  if (parsedDetails.medications) parts.push('Meds: ' + parsedDetails.medications);
+  if (parsedDetails.conditions) parts.push('Conditions: ' + parsedDetails.conditions);
+  if (parsedDetails.notes) parts.push('Notes: ' + parsedDetails.notes);
+  if (parsedDetails.patientPhone) parts.push('📞 ' + parsedDetails.patientPhone);
+  if (parsedDetails.emergencyContact?.name) parts.push('EC: ' + parsedDetails.emergencyContact.name);
+  return parts.length ? parts.join(' · ') : '';
+}
+
 function normalizeRequest(request) {
-  const details = safeParseJSON(request.details, {});
-  const detailsText = typeof request.details === 'string' && request.details.trim() ? request.details.trim() : '';
+  const rawDetails = request.details;
+  const details = safeParseJSON(rawDetails, {});
+  const detailsText = buildDetailsText(rawDetails, details);
   const blood = request.bloodGroup || details.bloodGroup || '—';
   const organs = request.organType || details.organType || '—';
   const severity = details.severity ? titleCase(details.severity) : 'Unknown';
@@ -507,6 +534,10 @@ function normalizeRequest(request) {
   const patientPhone = details.patientPhone || '—';
   const ecphone = details.emergencyContact?.phone || '—';
   const callPhone = ecphone !== '—' ? ecphone : patientPhone !== '—' ? patientPhone : '';
+  const ecname = details.emergencyContact?.name || '—';
+  const location = details.location || '—';
+  const age = details.age || '—';
+  const gender = details.gender || '—';
 
   return {
     ...request,
@@ -520,28 +551,60 @@ function normalizeRequest(request) {
     need,
     patientPhone,
     ecphone,
+    ecname,
+    location,
+    age,
+    gender,
     callPhone,
     createdAt: request.createdAt ? new Date(request.createdAt).toLocaleString() : new Date(request.timestamp || Date.now()).toLocaleString(),
   };
 }
 
+function showLoading() {
+  isLoading = true;
+  const tbody = document.getElementById('tbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3)"><div style="display:inline-block;width:28px;height:28px;border:3px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite"></div><div style="margin-top:10px;font-size:13px">Loading emergency requests from database...</div></td></tr>';
+  const cards = document.getElementById('cardList');
+  if (cards) cards.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3)"><div style="display:inline-block;width:28px;height:28px;border:3px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite"></div><div style="margin-top:10px;font-size:13px">Loading...</div></div>';
+}
+
+function showError(message) {
+  const tbody = document.getElementById('tbody');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:#ef4444"><div style="font-size:20px;margin-bottom:8px">⚠️</div><div style="font-size:13px;margin-bottom:12px">${message}</div><button onclick="loadPatients()" style="padding:6px 16px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">Retry</button></td></tr>`;
+  const cards = document.getElementById('cardList');
+  if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#ef4444"><div style="font-size:20px;margin-bottom:8px">⚠️</div><div style="font-size:13px;margin-bottom:12px">${message}</div><button onclick="loadPatients()" style="padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Retry</button></div>`;
+}
+
 async function loadPatients() {
+  showLoading();
   try {
     const response = await fetch('/api/requests');
     if (!response.ok) {
-      throw new Error(`Unable to fetch requests: ${response.status} ${response.statusText}`);
+      throw new Error(`Server error: ${response.status} ${response.statusText}`);
     }
     const result = await response.json();
-    patients = (result.requests || []).map(normalizeRequest);
+    const requests = result.requests || result.data || [];
+    if (!Array.isArray(requests)) {
+      throw new Error('Invalid response format from server');
+    }
+    patients = requests.map(normalizeRequest);
+    nextId = patients.length ? Math.max(...patients.map(p => p.id || 0)) + 1 : 1;
+    isLoading = false;
     renderTable();
     renderCards();
     updateStats();
+    console.log(`✅ Loaded ${patients.length} emergency requests from database`);
   } catch (error) {
-    console.error('Failed to fetch patients data:', error);
+    isLoading = false;
+    console.error('❌ Failed to fetch patients data:', error);
+    showError('Failed to load emergency requests. Check your connection and try again.');
   }
 }
 
+// Initial load
 loadPatients();
+// Auto-refresh every 30 seconds
+refreshInterval = setInterval(loadPatients, 30000);
 
 function getFiltered(q=''){
   const s=q.toLowerCase();
@@ -751,7 +814,7 @@ function deletePatient(id){
   }
 }
 
-function savePatient(){
+async function savePatient(){
   const name=document.getElementById('f_name').value.trim();
   const phone=document.getElementById('f_phone').value.trim();
   const age=parseInt(document.getElementById('f_age').value);
@@ -766,19 +829,50 @@ function savePatient(){
   if(!name||!phone||!age||!gender||!location||!blood||!need||!severity){alert('Please fill all required fields (marked *).');return;}
   const editId=parseInt(document.getElementById('modalOverlay').dataset.editId);
   if(editId){
+    // Local-only edit (API update not supported yet)
     const idx=patients.findIndex(p=>p.id===editId);
-    patients[idx]={id:editId,name,phone,age,gender,location,need,blood,organs,severity,ecname,ecphone};
-    if(selectedId===editId)selectPatient(editId);
+    if(idx>=0){
+      patients[idx]={...patients[idx],requesterName:name,phone,age,gender,location,need,blood,organs,severity,ecname,ecphone};
+      if(selectedId===editId)selectPatient(editId);
+    }
+    closeModal();renderTable();renderCards();
   }else{
-    patients.push({id:nextId++,name,phone,age,gender,location,need,blood,organs,severity,ecname,ecphone});
+    // Save new patient to Neon database via API
+    const requestData = {
+      donorId: `REQ-${Date.now()}`,
+      requesterName: name,
+      requestType: need === 'both' ? 'Both' : need === 'blood' ? 'Blood' : 'Organ',
+      bloodGroup: blood || null,
+      organType: organs !== '—' ? organs : null,
+      details: JSON.stringify({
+        age, gender, location, severity,
+        patientPhone: phone,
+        emergencyContact: { name: ecname, phone: ecphone }
+      })
+    };
+    try {
+      const res = await fetch('/api/donors/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
+      });
+      const result = await res.json();
+      if (result.success) {
+        closeModal();
+        await loadPatients(); // Refresh from DB
+      } else {
+        alert('Failed to save: ' + (result.error || 'Unknown error'));
+      }
+    } catch(err) {
+      console.error('Save error:', err);
+      alert('Failed to save patient. Check your connection.');
+    }
   }
-  closeModal();renderTable();renderCards();
 }
 
 document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
 
-renderTable();
-renderCards();
+// Initial render handled by loadPatients() — no duplicate calls needed
 </script>
 </body>
 </html>
