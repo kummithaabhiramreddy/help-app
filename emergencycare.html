@@ -541,17 +541,59 @@
   }
 
   function submitForm() {
-    document.getElementById('progressRow').style.display = 'none';
-    document.getElementById('page4').classList.remove('active');
-    document.getElementById('navBtns').style.display = 'none';
-    document.querySelector('.hero-strip').style.display = 'none';
-    const ref = 'HLP-' + Math.floor(100000 + Math.random()*900000);
-    const eta = Math.floor(5 + Math.random()*10);
-    document.getElementById('refNum').textContent = ref;
-    document.getElementById('etaMin').textContent = '~' + eta;
-    document.getElementById('successScreen').classList.add('active');
-    window.scrollTo({ top:0, behavior:'smooth' });
-  }
+  // Gather form data
+  const data = {
+    donorId: `REQ-${Date.now()}`,
+    requesterName: document.getElementById('patientName').value.trim(),
+    requestType: needType,
+    bloodGroup: bloodGroup || null,
+    organType: organs.length ? organs.join(',') : null,
+    details: JSON.stringify({
+      age: document.getElementById('patientAge').value.trim(),
+      gender: document.getElementById('patientGender').value,
+      location: document.getElementById('patientLocation').value.trim(),
+      patientPhone: document.getElementById('patientPhone').value.trim(),
+      patientEmail: document.getElementById('patientEmail').value.trim(),
+      severity: severity,
+      allergies: document.getElementById('allergies').value.trim(),
+      medications: document.getElementById('medications').value.trim(),
+      conditions: document.getElementById('conditions').value.trim(),
+      emergencyContact: {
+        name: document.getElementById('ecName').value.trim(),
+        phone: document.getElementById('ecPhone').value.trim()
+      },
+      notes: document.getElementById('notes').value.trim()
+    })
+  };
+
+  // Hide UI elements before sending
+  document.getElementById('progressRow').style.display = 'none';
+  document.getElementById('page4').classList.remove('active');
+  document.getElementById('navBtns').style.display = 'none';
+  document.querySelector('.hero-strip').style.display = 'none';
+
+  // Send to Neon-backed endpoint
+  fetch('/api/donors/request', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+    .then(res => res.json())
+    .then(resData => {
+      const ref = resData.success ? data.donorId : '—';
+      document.getElementById('refNum').textContent = ref;
+      document.getElementById('successScreen').classList.add('active');
+    })
+    .catch(err => {
+      console.error('❌ Emergency request submit error:', err);
+      alert('Failed to submit emergency request. Please try again.');
+      // Restore UI in case of failure
+      document.getElementById('progressRow').style.display = '';
+      document.getElementById('page4').classList.add('active');
+      document.getElementById('navBtns').style.display = '';
+      document.querySelector('.hero-strip').style.display = '';
+    });
+}
 </script>
 </body>
 </html>

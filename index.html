@@ -66,6 +66,123 @@
     align-items: center;
   }
 
+  .account-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 8px 12px;
+  }
+
+  .account-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: rgba(255,45,59,0.14);
+    color: var(--red);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 14px;
+    min-width: 36px;
+  }
+
+  .account-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+    min-width: 0;
+  }
+
+  .account-name {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-email {
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .account-card {
+    cursor: pointer;
+  }
+
+  .account-panel-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  .account-panel-overlay.open {
+    display: flex;
+  }
+
+  .account-panel {
+    width: min(360px, calc(100% - 40px));
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  }
+
+  .account-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .account-panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .account-panel-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .account-panel-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .account-panel-label {
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+
+  .account-panel-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
   .icon-btn {
     width: 40px;
     height: 40px;
@@ -568,7 +685,47 @@
   <div class="logo">HE<span>L</span>P</div>
   <div class="header-actions">
     <div class="icon-btn notif-dot">🔔</div>
-    <div class="icon-btn">👤</div>
+    <div class="account-card" id="accountCard" onclick="openAccountPanel()">
+      <div class="account-avatar" id="accountAvatar">U</div>
+      <div class="account-meta">
+        <div class="account-name" id="accountName">Guest</div>
+        <div class="account-email" id="accountEmail">No account</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="account-panel-overlay" id="accountPanelOverlay" onclick="closeAccountPanel(event)">
+  <div class="account-panel" role="dialog" aria-modal="true">
+    <div class="account-panel-header">
+      <div>
+        <div class="account-panel-title">Account Details</div>
+        <div class="account-panel-label">Stored account information</div>
+      </div>
+      <button class="account-panel-close" aria-label="Close account panel" onclick="closeAccountPanel(event)">&times;</button>
+    </div>
+    <div class="account-panel-row">
+      <div>
+        <div class="account-panel-label">Name</div>
+        <div class="account-panel-value" id="panelAccountName">Guest</div>
+      </div>
+      <div>
+        <div class="account-panel-label">Blood Group</div>
+        <div class="account-panel-value" id="panelAccountBlood">N/A</div>
+      </div>
+    </div>
+    <div class="account-panel-row">
+      <div style="flex:1;">
+        <div class="account-panel-label">Email</div>
+        <div class="account-panel-value" id="panelAccountEmail">Not signed in</div>
+      </div>
+    </div>
+    <div class="account-panel-row">
+      <div style="flex:1;">
+        <div class="account-panel-label">Phone</div>
+        <div class="account-panel-value" id="panelAccountPhone">Not available</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -744,6 +901,8 @@
   }
 
   async function updateDashboardData() {
+    renderAccountInfo();
+
     // Set My Blood
     const bg = localStorage.getItem('userBloodGroup') || 'N/A';
     document.getElementById('myBloodStat').textContent = bg;
@@ -759,6 +918,36 @@
       }
     } catch (e) {
       document.getElementById('nearestStat').textContent = '-';
+    }
+  }
+
+  // ── Account display in header ──
+  function renderAccountInfo() {
+    const name = localStorage.getItem('userName') || 'Guest';
+    const email = localStorage.getItem('userEmail') || 'Not signed in';
+    const phone = localStorage.getItem('userPhone') || 'Not available';
+    const blood = localStorage.getItem('userBloodGroup') || 'N/A';
+    const avatar = name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
+
+    document.getElementById('accountName').textContent = name;
+    document.getElementById('accountEmail').textContent = email;
+    document.getElementById('accountAvatar').textContent = avatar;
+
+    document.getElementById('panelAccountName').textContent = name;
+    document.getElementById('panelAccountEmail').textContent = email;
+    document.getElementById('panelAccountPhone').textContent = phone;
+    document.getElementById('panelAccountBlood').textContent = blood;
+  }
+
+  function openAccountPanel() {
+    renderAccountInfo();
+    document.getElementById('accountPanelOverlay').classList.add('open');
+  }
+
+  function closeAccountPanel(event) {
+    event.stopPropagation();
+    if (event.target.id === 'accountPanelOverlay' || event.target.closest('.account-panel-close')) {
+      document.getElementById('accountPanelOverlay').classList.remove('open');
     }
   }
 

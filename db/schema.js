@@ -71,3 +71,22 @@ export const otps = pgTable(
     otpEmailIdx: index('idx_otp_email').on(table.email),
   })
 );
+
+export const emergencyCare = pgTable(
+  'emergency_care',
+  {
+    id: serial('id').primaryKey(),
+    donorId: varchar('donor_id', { length: 100 }).notNull(),
+    requesterName: varchar('requester_name', { length: 255 }).notNull(),
+    requestType: varchar('request_type', { length: 50 }), // Blood or Organ
+    bloodGroup: varchar('blood_group', { length: 10 }),
+    organType: text('organ_type'),
+    details: text('details'),
+    timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
+    createdAt: timestamp('created_at').defaultNow(),
+  },
+  (table) => ({
+    donorReqIdx: index('idx_ec_donor').on(table.donorId),
+    requesterIdx: index('idx_ec_name').on(table.requesterName),
+  })
+);

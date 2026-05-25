@@ -594,6 +594,10 @@
 <div class="app-header fade-up">
   <div class="logo">HE<span>L</span>P</div>
   <div class="header-actions">
+<!-- Header -->
+<div class="app-header fade-up">
+  <div class="logo">HE<span>L</span>P</div>
+  <div class="header-actions">
     <div class="icon-btn notif-dot">🔔</div>
     <div class="icon-btn">👤</div>
   </div>
@@ -602,6 +606,7 @@
 <div id="map-container">
   <div id="map"></div>
   <button id="startNavBtn" class="start-nav-btn">Start Navigation</button>
+  <button id="enableGpsBtn" class="start-nav-btn">Enable GPS</button>
 </div>
 
 <!-- Bottom Nav -->
@@ -952,7 +957,7 @@
     // Blue icon for user current location
     const blueIcon = L.divIcon({
       className: '',
-      html: '<div style="width:20px;height:20px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 8px rgba(66,133,244,0.25);"></div>',
+      html: '<div style="font-size:24px;color:#4285F4;">&#8594;</div>',
       iconSize: [20, 20],
       iconAnchor: [10, 10]
     });
@@ -984,7 +989,9 @@
 
     // Start Navigation button
     const startBtn = document.getElementById('startNavBtn');
+    const enableBtn = document.getElementById('enableGpsBtn');
     startBtn.style.display = 'block';
+    enableBtn.style.display = 'none';
     startBtn.textContent = 'Start Navigation';
 
     let watchId = null;
@@ -1003,8 +1010,9 @@
         watchId = navigator.geolocation.watchPosition(function(pos) {
           const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
           
-          // Move blue user dot
+          // Move blue user dot and hide enable button
           userDot.setLatLng(latlng);
+          enableBtn.style.display = 'none';
           
           // Redraw route from new location
           drawRoute(latlng);
@@ -1030,6 +1038,7 @@
           isNavigating = false;
           userDot.setIcon(errorIcon);
           showToast('Could not get your location. Please enable GPS/Location in your device settings and try again.');
+          enableBtn.style.display = 'block';
         }, {enableHighAccuracy: true, maximumAge: 3000, timeout: 15000});
 
       } else {
@@ -1040,6 +1049,11 @@
         // Zoom back out to see full route
         map.fitBounds(L.latLngBounds(userDot.getLatLng(), destLatLng).pad(0.3));
       }
+    });
+    
+    // Enable GPS button triggers start navigation
+    enableBtn.addEventListener('click', () => {
+      startBtn.click();
     });
 
   } else {

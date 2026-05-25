@@ -4,7 +4,7 @@
  */
 
 import { db } from './client.js';
-import { donors, users, emergencyRequests, otps } from './schema.js';
+import { donors, users, emergencyRequests, otps, emergencyCare } from './schema.js';
 import { eq, or, ilike, gt, and, sql, desc, count, inArray } from 'drizzle-orm';
 
 export default {
@@ -130,6 +130,18 @@ export default {
       }));
     } catch (err) {
       console.error('❌ Database query error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Get all emergency requests from the database
+   */
+  getAllRequests: async () => {
+    try {
+      return await db.select().from(emergencyRequests).orderBy(desc(emergencyRequests.timestamp));
+    } catch (err) {
+      console.error('❌ Get all requests error:', err);
       throw err;
     }
   },
