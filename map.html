@@ -554,6 +554,29 @@
     cursor: pointer;
     display: none;
   }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--red);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(255,45,59,0.4);
+    z-index: 2000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .toast.show {
+    display: block;
+    opacity: 1;
+  }
   .start-nav-btn:active { transform: translateX(-50%) scale(0.95); }
 
   /* Leaflet routing tweaks */
@@ -875,7 +898,6 @@
       { id: 172, n: "Govt Hospital Blood Bank Peddapalli", a: "Peddapalli Town", c: "Peddapalli", s: "TS", lat: 18.6156, lng: 79.3749, ph: "+91-8728-244777", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3800, rt: "26 min" },
       // Sultanbad
       { id: 173, n: "Area Hospital Blood Bank Sultanbad", a: "Sultanbad Town", c: "Sultanbad", s: "TS", lat: 18.6833, lng: 79.2667, ph: "+91-8728-255888", r: 3.9, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2500, rt: "32 min" },
-      // Husnabad
       { id: 174, n: "Area Hospital Blood Bank Husnabad", a: "Husnabad Town", c: "Husnabad", s: "TS", lat: 18.4333, lng: 79.2833, ph: "+91-8724-266999", r: 4.0, bt: ["A+", "B+", "O+"], h: "24/7", v: 1, td: 2800, rt: "30 min" },
       // Koratla
       { id: 175, n: "Area Hospital Blood Bank Koratla", a: "Koratla Town", c: "Koratla", s: "TS", lat: 18.8224, lng: 78.7162, ph: "+91-8724-277000", r: 4.1, bt: ["A+", "B+", "O+", "AB+"], h: "24/7", v: 1, td: 3500, rt: "26 min" },
@@ -885,13 +907,26 @@
 
     // ─── CITY COORDINATES ──────────────────────────────────────────
     
+    const map = L.map('map').setView([16.5062, 80.6480], 6);
+    L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { 
+        maxZoom: 20, 
+        subdomains:['mt0','mt1','mt2','mt3'],
+        attribution: 'Map data &copy; Google' 
+    }).addTo(map);
 
-  const map = L.map('map').setView([16.5062, 80.6480], 6);
-  L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { 
-    maxZoom: 20, 
-    subdomains:['mt0','mt1','mt2','mt3'],
-    attribution: 'Map data &copy; Google' 
-  }).addTo(map);
+    // Toast helper function
+    function showToast(message) {
+        let toast = document.getElementById('toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.className = 'toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 
   const urlParams = new URLSearchParams(window.location.search);
   const route = urlParams.get('route');
@@ -900,25 +935,40 @@
   let userMarker = null;
 
   if (route) {
+    const saddr = urlParams.get('saddr').split(',');
     const daddr = urlParams.get('daddr').split(',');
+    const startLatLng = L.latLng(parseFloat(saddr[0]), parseFloat(saddr[1]));
     const destLatLng = L.latLng(parseFloat(daddr[0]), parseFloat(daddr[1]));
     
-    // Add destination marker immediately
-    L.marker(destLatLng).addTo(map).bindPopup("Blood Bank").openPopup();
+    // Red icon for blood bank
+    const redIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:32px;height:32px;background:#FF2D3B;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(255,45,59,0.5);"></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+    L.marker(destLatLng, {icon: redIcon}).addTo(map).bindPopup('<b style="color:#FF2D3B">🏥 Blood Bank</b>');
 
-    const startBtn = document.getElementById('startNavBtn');
-    startBtn.style.display = 'block';
-    startBtn.textContent = 'Start Navigation';
+    // Blue icon for user current location
+    const blueIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:20px;height:20px;background:#4285F4;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 8px rgba(66,133,244,0.25);"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+    const errorIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:20px;height:20px;background:#FF2D3B;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 8px rgba(255,45,59,0.25);"></div>',
+      iconSize: [20, 20],
+      iconAnchor: [10, 10]
+    });
+    let userDot = L.marker(startLatLng, {icon: blueIcon}).addTo(map).bindPopup('<b style="color:#4285F4">📍 Your Location</b>');
 
-    let watchId = null;
-    let userMarkerEl = null;
-    let pulseMarker = null;
-    let isNavigating = false;
-
-    function drawRoute(fromLatLng) {
+    // Draw route immediately from saddr to daddr
+    function drawRoute(fromLL) {
       if (routingControl) map.removeControl(routingControl);
       routingControl = L.Routing.control({
-        waypoints: [fromLatLng, destLatLng],
+        waypoints: [fromLL, destLatLng],
         routeWhileDragging: false,
         addWaypoints: false,
         show: false,
@@ -929,42 +979,21 @@
       }).addTo(map);
     }
 
-    function updateUserMarker(latlng) {
-      if (!userMarkerEl) {
-        // Pulsing outer ring
-        pulseMarker = L.circleMarker(latlng, {
-          radius: 18, fillColor: "#4285F4", color: "#4285F4", weight: 0, opacity: 0.3, fillOpacity: 0.2
-        }).addTo(map);
-        // Solid inner dot
-        userMarkerEl = L.circleMarker(latlng, {
-          radius: 8, fillColor: "#4285F4", color: "#fff", weight: 3, opacity: 1, fillOpacity: 1
-        }).addTo(map);
-      } else {
-        userMarkerEl.setLatLng(latlng);
-        pulseMarker.setLatLng(latlng);
-      }
-    }
+    drawRoute(startLatLng);
+    map.fitBounds(L.latLngBounds(startLatLng, destLatLng).pad(0.3));
 
-    // Get initial location to show route before navigation starts
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(function(pos) {
-        const userLL = L.latLng(pos.coords.latitude, pos.coords.longitude);
-        updateUserMarker(userLL);
-        drawRoute(userLL);
-        map.fitBounds(L.latLngBounds(userLL, destLatLng).pad(0.3));
-      }, function() {
-        // Fallback: use saddr from URL
-        const saddr = urlParams.get('saddr').split(',');
-        const fallbackLL = L.latLng(parseFloat(saddr[0]), parseFloat(saddr[1]));
-        drawRoute(fallbackLL);
-        map.fitBounds(L.latLngBounds(fallbackLL, destLatLng).pad(0.3));
-      }, {enableHighAccuracy: true, timeout: 10000});
-    }
+    // Start Navigation button
+    const startBtn = document.getElementById('startNavBtn');
+    startBtn.style.display = 'block';
+    startBtn.textContent = 'Start Navigation';
+
+    let watchId = null;
+    let isNavigating = false;
 
     startBtn.addEventListener('click', () => {
       if (!isNavigating) {
         if (!navigator.geolocation) {
-          alert('GPS not available on this device');
+          alert('GPS is not supported on this device/browser');
           return;
         }
         isNavigating = true;
@@ -974,34 +1003,42 @@
         watchId = navigator.geolocation.watchPosition(function(pos) {
           const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
           
-          updateUserMarker(latlng);
+          // Move blue user dot
+          userDot.setLatLng(latlng);
+          
+          // Redraw route from new location
           drawRoute(latlng);
           
-          // Smoothly follow user
+          // Follow user smoothly
           map.setView(latlng, 17, {animate: true, duration: 0.5});
           
           startBtn.textContent = 'Stop Navigation';
           startBtn.style.background = '#FF2D3B';
 
-          // Check if arrived (within 50m of destination)
+          // Arrived check (within 50m)
           if (latlng.distanceTo(destLatLng) < 50) {
-            startBtn.textContent = 'Arrived!';
+            startBtn.textContent = '✅ Arrived!';
             startBtn.style.background = '#00FF88';
+            startBtn.style.color = '#000';
             navigator.geolocation.clearWatch(watchId);
             isNavigating = false;
           }
         }, function(err) {
-          startBtn.textContent = 'GPS Error - Retry';
+          // GPS failed - keep showing route from saddr, don't break
+          startBtn.textContent = 'Start Navigation';
           startBtn.style.background = '#FF2D3B';
           isNavigating = false;
-        }, {enableHighAccuracy: true, maximumAge: 2000, timeout: 10000});
+          userDot.setIcon(errorIcon);
+          showToast('Could not get your location. Please enable GPS/Location in your device settings and try again.');
+        }, {enableHighAccuracy: true, maximumAge: 3000, timeout: 15000});
 
       } else {
-        // Stop navigation
         isNavigating = false;
         if (watchId) navigator.geolocation.clearWatch(watchId);
         startBtn.textContent = 'Start Navigation';
         startBtn.style.background = '#FF2D3B';
+        // Zoom back out to see full route
+        map.fitBounds(L.latLngBounds(userDot.getLatLng(), destLatLng).pad(0.3));
       }
     });
 
