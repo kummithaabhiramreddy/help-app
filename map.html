@@ -913,6 +913,7 @@
          maxZoom: 19, 
          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' 
      }).addTo(map);
+     setTimeout(() => { map.invalidateSize(); }, 200);
 
     // Toast helper function
     function showToast(message) {
@@ -1023,6 +1024,26 @@
 
     drawRoute(startLatLng);
     map.fitBounds(L.latLngBounds(startLatLng, destLatLng).pad(0.3));
+
+    // Auto-detect user's real GPS location on load to show precise route from their real position
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        const realLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        console.log('GPS located user successfully on load:', realLatLng);
+        
+        // Update user dot to live GPS position
+        userDot.setLatLng(realLatLng);
+        userDot.bindPopup('<b style="color:#4285F4">📍 Your Live GPS Location</b>').openPopup();
+        
+        // Redraw route from live GPS location to destination
+        drawRoute(realLatLng);
+        
+        // Fit map bounds to show complete start-to-end route
+        map.fitBounds(L.latLngBounds(realLatLng, destLatLng).pad(0.3));
+      }, function(err) {
+        console.warn('Auto-GPS on load failed, falling back to static city coordinates:', err);
+      }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 });
+    }
 
     // Start Navigation button
     const startBtn = document.getElementById('startNavBtn');
