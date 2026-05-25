@@ -1289,7 +1289,7 @@
       }, 500);
 
       try {
-        await fetch(API_BASE + '/api/donors/request', {
+        const res = await fetch(API_BASE + '/api/donors/request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1300,7 +1300,18 @@
             details: `Organ interest: ${organs}`
           })
         });
-      } catch (e) { console.error("Logging failed", e); }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Request logging failed:', res.status, errText);
+          alert('Failed to log organ request. Please try again.');
+        } else {
+          console.log('Organ request logged successfully');
+        }
+      } catch (e) {
+        console.error('Logging failed', e);
+        alert('Unable to contact server. Please check your connection.');
+      }
     }
 
     /* ── HEALTH FILE SCAN ENGINE (from File 1 — single authoritative copy) ── */

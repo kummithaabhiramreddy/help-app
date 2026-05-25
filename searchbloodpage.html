@@ -842,7 +842,7 @@
 
       // Log to Database in background
       try {
-        await fetch(API_BASE + '/api/donors/request', {
+        const res = await fetch(API_BASE + '/api/donors/request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -853,7 +853,18 @@
             details: `Blood needed: ${blood}`
           })
         });
-      } catch (e) { console.error("Logging failed", e); }
+
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('Request logging failed:', res.status, errText);
+          alert('Failed to log emergency request. Please try again.');
+        } else {
+          console.log('Emergency request logged successfully');
+        }
+      } catch (e) {
+        console.error('Logging failed', e);
+        alert('Unable to contact server. Please check your connection.');
+      }
     }
 
     function exportCSV() {

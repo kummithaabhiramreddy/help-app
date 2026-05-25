@@ -69,30 +69,32 @@
   .account-card {
     display: flex;
     align-items: center;
-    gap: 14px;
+    justify-content: center;
+    gap: 0;
     background: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 28px;
-    padding: 12px 16px;
-    min-width: 240px;
-    max-width: 100%;
+    border-radius: 14px;
+    padding: 6px;
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    max-width: 46px;
     flex-shrink: 0;
-    box-shadow: 0 12px 35px rgba(0,0,0,0.16);
-    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.12);
+    backdrop-filter: blur(8px);
   }
 
   .account-avatar {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
-    background: rgba(255,45,59,0.2);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255,45,59,0.18);
     color: var(--red);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 16px;
-    min-width: 46px;
+    font-size: 14px;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
   }
 
@@ -962,9 +964,12 @@
     const displayBlood = blood || 'N/A';
     const avatar = displayName !== 'Guest' ? displayName.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() : 'U';
 
-    document.getElementById('accountName').textContent = displayName;
-    document.getElementById('accountEmail').textContent = displayEmail;
-    document.getElementById('accountAvatar').textContent = avatar;
+    const accNameEl = document.getElementById('accountName');
+    const accEmailEl = document.getElementById('accountEmail');
+    const accAvatarEl = document.getElementById('accountAvatar');
+    if (accNameEl) accNameEl.textContent = displayName;
+    if (accEmailEl) accEmailEl.textContent = displayEmail;
+    if (accAvatarEl) accAvatarEl.textContent = avatar;
 
     document.getElementById('panelAccountName').textContent = displayName;
     document.getElementById('panelAccountEmail').textContent = displayEmail;
