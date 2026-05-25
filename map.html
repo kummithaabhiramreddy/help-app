@@ -1009,9 +1009,6 @@
           userDot.setLatLng(latlng);
           enableBtn.style.display = 'none';
           
-          // Redraw route from new location
-          drawRoute(latlng);
-          
           // Follow user smoothly
           map.setView(latlng, 17, {animate: true, duration: 0.5});
           

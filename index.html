@@ -69,25 +69,31 @@
   .account-card {
     display: flex;
     align-items: center;
-    gap: 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 8px 12px;
+    gap: 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 28px;
+    padding: 12px 16px;
+    min-width: 240px;
+    max-width: 100%;
+    flex-shrink: 0;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.16);
+    backdrop-filter: blur(14px);
   }
 
   .account-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: rgba(255,45,59,0.14);
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: rgba(255,45,59,0.2);
     color: var(--red);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 800;
-    font-size: 14px;
-    min-width: 36px;
+    font-size: 16px;
+    min-width: 46px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
   }
 
   .account-meta {
@@ -98,15 +104,16 @@
   }
 
   .account-name {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .account-email {
-    font-size: 10px;
+    font-size: 12px;
     color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
@@ -115,6 +122,7 @@
 
   .account-card {
     cursor: pointer;
+    flex-shrink: 0;
   }
 
   .account-panel-overlay {
@@ -184,20 +192,21 @@
   }
 
   .icon-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
     cursor: pointer;
     transition: background 0.2s, transform 0.15s;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.12);
   }
 
-  .icon-btn:active { transform: scale(0.92); }
+  .icon-btn:active { transform: scale(0.96); }
 
   .notif-dot { position: relative; }
 
@@ -682,15 +691,11 @@
 
 <!-- Header -->
 <div class="app-header fade-up">
-  <a href="database.html" class="logo" style="text-decoration: none; color: inherit;">HE<span>L</span>P</a>
+  <div class="logo">HE<span>L</span>P</div>
   <div class="header-actions">
     <div class="icon-btn notif-dot">🔔</div>
     <div class="account-card" id="accountCard" onclick="openAccountPanel()">
-      <div class="account-avatar" id="accountAvatar">U</div>
-      <div class="account-meta">
-        <div class="account-name" id="accountName">Guest</div>
-        <div class="account-email" id="accountEmail">No account</div>
-      </div>
+      <div class="account-avatar" id="accountAvatar">👤</div>
     </div>
   </div>
 </div>
@@ -844,6 +849,7 @@
 
   // ── Onboarding Logic ──
   document.addEventListener('DOMContentLoaded', () => {
+    loadAccountInfo();
     const isComplete = localStorage.getItem('onboardingComplete');
     if (!isComplete) {
       document.getElementById('onboardingOverlay').classList.add('active');
@@ -901,7 +907,7 @@
   }
 
   async function updateDashboardData() {
-    renderAccountInfo();
+    await loadAccountInfo();
 
     // Set My Blood
     const bg = localStorage.getItem('userBloodGroup') || 'N/A';
@@ -922,21 +928,52 @@
   }
 
   // ── Account display in header ──
-  function renderAccountInfo() {
-    const name = localStorage.getItem('userName') || 'Guest';
-    const email = localStorage.getItem('userEmail') || 'Not signed in';
-    const phone = localStorage.getItem('userPhone') || 'Not available';
-    const blood = localStorage.getItem('userBloodGroup') || 'N/A';
-    const avatar = name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'U';
+  async function loadAccountInfo() {
+    let name = localStorage.getItem('userName') || localStorage.getItem('name') || '';
+    let email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+    let phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+    let blood = localStorage.getItem('userBloodGroup') || localStorage.getItem('bloodgroup') || '';
+    const userId = localStorage.getItem('userId');
 
-    document.getElementById('accountName').textContent = name;
-    document.getElementById('accountEmail').textContent = email;
+    if ((!name || !email || !phone || !blood) && userId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const donor = data.donor || {};
+          name = name || donor.name || '';
+          email = email || donor.email || '';
+          phone = phone || donor.phone || '';
+          blood = blood || donor.bloodgroup || donor.bloodGroup || '';
+
+          if (name) localStorage.setItem('userName', name);
+          if (email) localStorage.setItem('userEmail', email);
+          if (phone) localStorage.setItem('userPhone', phone);
+          if (blood) localStorage.setItem('userBloodGroup', blood);
+        }
+      } catch (err) {
+        console.warn('Unable to load donor info from API:', err);
+      }
+    }
+
+    const displayName = name || 'Guest';
+    const displayEmail = email || 'Not signed in';
+    const displayPhone = phone || 'Not available';
+    const displayBlood = blood || 'N/A';
+    const avatar = displayName !== 'Guest' ? displayName.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase() : 'U';
+
+    document.getElementById('accountName').textContent = displayName;
+    document.getElementById('accountEmail').textContent = displayEmail;
     document.getElementById('accountAvatar').textContent = avatar;
 
-    document.getElementById('panelAccountName').textContent = name;
-    document.getElementById('panelAccountEmail').textContent = email;
-    document.getElementById('panelAccountPhone').textContent = phone;
-    document.getElementById('panelAccountBlood').textContent = blood;
+    document.getElementById('panelAccountName').textContent = displayName;
+    document.getElementById('panelAccountEmail').textContent = displayEmail;
+    document.getElementById('panelAccountPhone').textContent = displayPhone;
+    document.getElementById('panelAccountBlood').textContent = displayBlood;
+  }
+
+  function renderAccountInfo() {
+    loadAccountInfo();
   }
 
   function openAccountPanel() {

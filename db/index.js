@@ -73,7 +73,8 @@ export default {
    */
   logEmergencyRequest: async (data) => {
     try {
-      // 1. Insert detailed request log
+      // 1. Insert detailed request log into the primary requests table
+      const timestamp = Date.now();
       await db.insert(emergencyRequests).values({
         donorId: data.donorId,
         requesterName: data.requesterName,
@@ -81,10 +82,21 @@ export default {
         bloodGroup: data.bloodGroup || null,
         organType: data.organType || null,
         details: data.details || '',
-        timestamp: Date.now(),
+        timestamp,
       });
 
-      // 2. Fetch current donor status to update detail strings
+      // 2. Also store a copy in emergency_care for compatibility with Neon expectations
+      await db.insert(emergencyCare).values({
+        donorId: data.donorId,
+        requesterName: data.requesterName,
+        requestType: data.requestType,
+        bloodGroup: data.bloodGroup || null,
+        organType: data.organType || null,
+        details: data.details || '',
+        timestamp,
+      });
+
+      // 3. Fetch current donor status to update detail strings
       const donor = await db.select().from(donors).where(eq(donors.donorId, data.donorId)).limit(1);
       if (donor[0]) {
         let currentDetail = donor[0].received_detail || '';

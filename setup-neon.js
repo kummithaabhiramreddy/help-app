@@ -62,7 +62,24 @@ async function setup() {
     await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_req_donor ON emergency_requests (donor_id);`);
     console.log('✅ Emergency Requests table ensured.');
 
-    // 4. Create OTPs Table
+    // 4. Create Emergency Care Table (alias for compatibility)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS emergency_care (
+        id SERIAL PRIMARY KEY,
+        donor_id VARCHAR(100) NOT NULL,
+        requester_name VARCHAR(255) NOT NULL,
+        request_type VARCHAR(50),
+        blood_group VARCHAR(10),
+        organ_type TEXT,
+        details TEXT,
+        timestamp BIGINT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await db.execute(sql`CREATE INDEX IF NOT EXISTS idx_ec_donor ON emergency_care (donor_id);`);
+    console.log('✅ Emergency Care table ensured.');
+
+    // 5. Create OTPs Table
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS otps (
         id SERIAL PRIMARY KEY,
