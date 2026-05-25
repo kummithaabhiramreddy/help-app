@@ -925,18 +925,31 @@
     const startBtn = document.getElementById('startNavBtn');
     startBtn.style.display = 'block';
     
+    let isTracking = false;
+
     startBtn.addEventListener('click', () => {
-      startBtn.textContent = "Locating...";
-      map.locate({setView: true, maxZoom: 16, watch: true, enableHighAccuracy: true});
+      if (!isTracking) {
+        isTracking = true;
+        startBtn.textContent = "Locating...";
+        startBtn.style.background = "var(--amber)";
+        map.locate({watch: true, enableHighAccuracy: true});
+      } else {
+        isTracking = false;
+        map.stopLocate();
+        startBtn.textContent = "Start Navigation";
+        startBtn.style.background = "var(--red)";
+      }
     });
 
     map.on('locationfound', function(e) {
-      startBtn.textContent = "Tracking Location...";
-      startBtn.style.background = "var(--green)";
+      if (!isTracking) return;
+      
+      startBtn.textContent = "Stop Navigation";
+      startBtn.style.background = "var(--red)";
       
       if (!userMarker) {
         userMarker = L.circleMarker(e.latlng, {
-          radius: 8, fillColor: "#00FF88", color: "#fff", weight: 2, opacity: 1, fillOpacity: 1
+          radius: 10, fillColor: "#00FF88", color: "#fff", weight: 3, opacity: 1, fillOpacity: 1
         }).addTo(map);
       } else {
         userMarker.setLatLng(e.latlng);
@@ -944,6 +957,9 @@
       
       // Update routing start point dynamically
       routingControl.spliceWaypoints(0, 1, e.latlng);
+      
+      // Force map to pan and zoom to user's moving location
+      map.setView(e.latlng, 18);
     });
 
   } else {
