@@ -900,66 +900,109 @@
   let userMarker = null;
 
   if (route) {
-    const saddr = urlParams.get('saddr').split(',');
     const daddr = urlParams.get('daddr').split(',');
+    const destLatLng = L.latLng(parseFloat(daddr[0]), parseFloat(daddr[1]));
     
-    routingControl = L.Routing.control({
-      waypoints: [
-        L.latLng(parseFloat(saddr[0]), parseFloat(saddr[1])),
-        L.latLng(parseFloat(daddr[0]), parseFloat(daddr[1]))
-      ],
-      routeWhileDragging: false,
-      lineOptions: {
-        styles: [{color: '#00E5FF', opacity: 0.8, weight: 6}] // blue line
-      },
-      createMarker: function(i, wp, nWps) {
-        if (i === 0) {
-          return L.marker(wp.latLng).bindPopup("Your Location");
-        } else if (i === nWps - 1) {
-          return L.marker(wp.latLng).bindPopup("Blood Bank");
-        }
-        return null;
-      }
-    }).addTo(map);
+    // Add destination marker immediately
+    L.marker(destLatLng).addTo(map).bindPopup("Blood Bank").openPopup();
 
     const startBtn = document.getElementById('startNavBtn');
     startBtn.style.display = 'block';
-    
-    let isTracking = false;
+    startBtn.textContent = 'Start Navigation';
 
-    startBtn.addEventListener('click', () => {
-      if (!isTracking) {
-        isTracking = true;
-        startBtn.textContent = "Locating...";
-        startBtn.style.background = "var(--amber)";
-        map.locate({watch: true, enableHighAccuracy: true});
-      } else {
-        isTracking = false;
-        map.stopLocate();
-        startBtn.textContent = "Start Navigation";
-        startBtn.style.background = "var(--red)";
-      }
-    });
+    let watchId = null;
+    let userMarkerEl = null;
+    let pulseMarker = null;
+    let isNavigating = false;
 
-    map.on('locationfound', function(e) {
-      if (!isTracking) return;
-      
-      startBtn.textContent = "Stop Navigation";
-      startBtn.style.background = "var(--red)";
-      
-      if (!userMarker) {
-        userMarker = L.circleMarker(e.latlng, {
-          radius: 10, fillColor: "#00FF88", color: "#fff", weight: 3, opacity: 1, fillOpacity: 1
+    function drawRoute(fromLatLng) {
+      if (routingControl) map.removeControl(routingControl);
+      routingControl = L.Routing.control({
+        waypoints: [fromLatLng, destLatLng],
+        routeWhileDragging: false,
+        addWaypoints: false,
+        show: false,
+        lineOptions: {
+          styles: [{color: '#4285F4', opacity: 0.9, weight: 6}]
+        },
+        createMarker: function() { return null; }
+      }).addTo(map);
+    }
+
+    function updateUserMarker(latlng) {
+      if (!userMarkerEl) {
+        // Pulsing outer ring
+        pulseMarker = L.circleMarker(latlng, {
+          radius: 18, fillColor: "#4285F4", color: "#4285F4", weight: 0, opacity: 0.3, fillOpacity: 0.2
+        }).addTo(map);
+        // Solid inner dot
+        userMarkerEl = L.circleMarker(latlng, {
+          radius: 8, fillColor: "#4285F4", color: "#fff", weight: 3, opacity: 1, fillOpacity: 1
         }).addTo(map);
       } else {
-        userMarker.setLatLng(e.latlng);
+        userMarkerEl.setLatLng(latlng);
+        pulseMarker.setLatLng(latlng);
       }
-      
-      // Update routing start point dynamically
-      routingControl.spliceWaypoints(0, 1, e.latlng);
-      
-      // Force map to pan and zoom to user's moving location
-      map.setView(e.latlng, 18);
+    }
+
+    // Get initial location to show route before navigation starts
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        const userLL = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        updateUserMarker(userLL);
+        drawRoute(userLL);
+        map.fitBounds(L.latLngBounds(userLL, destLatLng).pad(0.3));
+      }, function() {
+        // Fallback: use saddr from URL
+        const saddr = urlParams.get('saddr').split(',');
+        const fallbackLL = L.latLng(parseFloat(saddr[0]), parseFloat(saddr[1]));
+        drawRoute(fallbackLL);
+        map.fitBounds(L.latLngBounds(fallbackLL, destLatLng).pad(0.3));
+      }, {enableHighAccuracy: true, timeout: 10000});
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (!isNavigating) {
+        if (!navigator.geolocation) {
+          alert('GPS not available on this device');
+          return;
+        }
+        isNavigating = true;
+        startBtn.textContent = 'Locating...';
+        startBtn.style.background = '#FFBC42';
+
+        watchId = navigator.geolocation.watchPosition(function(pos) {
+          const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+          
+          updateUserMarker(latlng);
+          drawRoute(latlng);
+          
+          // Smoothly follow user
+          map.setView(latlng, 17, {animate: true, duration: 0.5});
+          
+          startBtn.textContent = 'Stop Navigation';
+          startBtn.style.background = '#FF2D3B';
+
+          // Check if arrived (within 50m of destination)
+          if (latlng.distanceTo(destLatLng) < 50) {
+            startBtn.textContent = 'Arrived!';
+            startBtn.style.background = '#00FF88';
+            navigator.geolocation.clearWatch(watchId);
+            isNavigating = false;
+          }
+        }, function(err) {
+          startBtn.textContent = 'GPS Error - Retry';
+          startBtn.style.background = '#FF2D3B';
+          isNavigating = false;
+        }, {enableHighAccuracy: true, maximumAge: 2000, timeout: 10000});
+
+      } else {
+        // Stop navigation
+        isNavigating = false;
+        if (watchId) navigator.geolocation.clearWatch(watchId);
+        startBtn.textContent = 'Start Navigation';
+        startBtn.style.background = '#FF2D3B';
+      }
     });
 
   } else {
