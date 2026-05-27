@@ -147,6 +147,37 @@ export default {
   },
 
   /**
+   * Get a single donor by donorId (or numeric id)
+   */
+  getDonorById: async (donorId) => {
+    try {
+      const result = await db.select().from(donors).where(eq(donors.donorId, donorId)).limit(1);
+      if (result.length === 0) {
+        const num = Number(donorId);
+        if (!isNaN(num)) {
+          const alt = await db.select().from(donors).where(eq(donors.id, num)).limit(1);
+          if (alt.length) return alt[0];
+        }
+        return null;
+      }
+      const row = result[0];
+      return {
+        ...row,
+        organs: (() => {
+          try {
+            return JSON.parse(row.organs || '[]');
+          } catch (e) {
+            return [];
+          }
+        })(),
+      };
+    } catch (err) {
+      console.error('❌ getDonorById error:', err);
+      throw err;
+    }
+  },
+
+  /**
    * Get all emergency requests from the database
    */
   getAllRequests: async () => {

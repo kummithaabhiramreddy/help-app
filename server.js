@@ -24,7 +24,7 @@ function verifyPassword(password, storedHash) {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 /* ── MIME types for static file serving ── */
 const MIME = {
   '.html': 'text/html',
@@ -474,6 +474,30 @@ async function handler(req, res) {
       received_detail: 'None yet',
     };
     console.log('DEBUG record before save:', record);
+
+        // GET specific donor by ID (singular endpoint for records page)
+    if (req.method === 'GET' && pathname.startsWith('/api/donor/')) {
+      const donorId = pathname.split('/').pop();
+      try {
+        const donor = await dbRepo.getDonorById(donorId);
+        if (!donor) return sendJSON(res, 404, { error: 'Donor not found' });
+        return sendJSON(res, 200, { donor });
+      } catch (err) {
+        console.error('GET donor by ID error:', err);
+        return sendJSON(res, 500, { error: 'Failed to fetch donor' });
+      }
+    }
+    if (req.method === 'GET' && pathname.startsWith('/api/donors/') && pathname !== '/api/donors/by-account') {
+      const donorId = pathname.split('/').pop();
+      try {
+        const donor = await dbRepo.getDonorById(donorId);
+        if (!donor) return sendJSON(res, 404, { error: 'Donor not found' });
+        return sendJSON(res, 200, { donor });
+      } catch (err) {
+        console.error('GET donor by ID error:', err);
+        return sendJSON(res, 500, { error: 'Failed to fetch donor' });
+      }
+    }
 
     try {
       // Save first 4 questions to users table

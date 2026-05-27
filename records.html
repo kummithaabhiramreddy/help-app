@@ -279,7 +279,7 @@
 
 <script>
   const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-    ? 'http://localhost:3000' 
+    ? 'http://localhost:3001' 
     : '';
 
   async function loadRecords() {
@@ -310,9 +310,9 @@
       try {
         const params = new URLSearchParams();
         if (email) params.set('email', email);
-        if (phone) params.set('phone', phone);
+        if (phone) params.set('phone', String(phone));
         console.log('Fetching by-account:', params.toString());
-        const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString());
+        const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString(), { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           console.log('by-account response:', data);
@@ -328,7 +328,7 @@
     // Fallback: try by specific donorId if we have one and haven't found a donor yet
     if (foundDonors.length === 0 && userId) {
       try {
-        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+        const res = await fetch(`${API_BASE}/api/donor/${userId}`, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           if (data.donor) {
@@ -346,16 +346,16 @@
     if (foundDonors.length === 0 && (email || phone)) {
       try {
         console.log('Ultimate fallback: fetching all donors to find match locally');
-        const res = await fetch(`${API_BASE}/api/donors`);
+        const res = await fetch(`${API_BASE}/api/donors`, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           const allDonors = data.donors || [];
-          const emailQ = email.toLowerCase().trim();
-          const phoneQ = phone.replace(/\D/g, '').slice(-10);
+          const emailQ = String(email).toLowerCase().trim();
+          const phoneQ = String(phone).replace(/\D/g, '').slice(-10);
           
           foundDonors = allDonors.filter(d => {
             const dEmail = (d.email || '').toLowerCase().trim();
-            const dPhone = (d.phone || '').replace(/\D/g, '').slice(-10);
+            const dPhone = String(d.phone || '').replace(/\D/g, '').slice(-10);
             return (emailQ && dEmail === emailQ) || (phoneQ && dPhone === phoneQ);
           });
           console.log('Local fallback matched:', foundDonors.length);
@@ -641,8 +641,7 @@
     }
   }
 
-  loadRecords();
-</script>
+window.addEventListener('DOMContentLoaded', loadRecords);
 
 </body>
 </html>
