@@ -340,6 +340,8 @@
       }
     }
 
+    let connectionFailed = false;
+
     // Ultimate Fallback: Fetch ALL donors and match locally if backend filters are failing
     if (foundDonors.length === 0 && (email || phone)) {
       try {
@@ -357,9 +359,12 @@
             return (emailQ && dEmail === emailQ) || (phoneQ && dPhone === phoneQ);
           });
           console.log('Local fallback matched:', foundDonors.length);
+        } else {
+          connectionFailed = true;
         }
       } catch (e) {
         console.warn('Ultimate fallback failed', e);
+        connectionFailed = true;
       }
     }
 
@@ -373,12 +378,16 @@
     if (email || phone || userId) {
       document.getElementById('recordsContent').innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">📝</div>
-          <div>No donor records found for your account</div>
+          <div class="empty-icon">${connectionFailed ? '⚠️' : '📝'}</div>
+          <div>${connectionFailed ? 'Cannot connect to database server' : 'No donor records found for your account'}</div>
           <div style="font-size: 12px; margin-top: 10px; color: var(--muted);">
             Account email: <strong>${email || 'not set'}</strong><br>
             Account phone: <strong>${phone || 'not set'}</strong><br>
-            <span style="margin-top:8px;display:block;">Make sure you registered as a donor with the same email/phone in <a href="form.html" style="color:var(--red);">the registration form</a>.</span>
+            <span style="margin-top:8px;display:block;">
+              ${connectionFailed 
+                ? 'Your backend server might be offline. Ensure Node.js is running if you are testing locally.' 
+                : 'Make sure you registered as a donor with the same email/phone in <a href="form.html" style="color:var(--red);">the registration form</a>.'}
+            </span>
           </div>
         </div>
       `;
