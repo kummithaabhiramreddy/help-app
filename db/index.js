@@ -656,12 +656,52 @@ export default {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        dob: user.dob,
+        city: user.city,
+        donationType: user.donationType,
         password: user.password,
       }).returning({ id: users.id });
 
       return { id: result[0]?.id };
     } catch (err) {
       console.error('❌ User creation error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Save user profile (first 4 questions from the form)
+   * Stores: name, dob, city, donationType
+   */
+  saveUserProfile: async (userProfile) => {
+    try {
+      const result = await db.insert(users).values({
+        name: userProfile.name,
+        dob: userProfile.dob,
+        city: userProfile.city,
+        donationType: userProfile.donationType,
+        email: userProfile.email,
+        phone: userProfile.phone,
+        password: userProfile.password || '',
+      }).returning({ id: users.id });
+
+      return { id: result[0]?.id };
+    } catch (err) {
+      console.error('❌ User profile save error:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Update user profile by email
+   */
+  updateUserProfile: async (email, updates) => {
+    try {
+      const emailKey = String(email || '').toLowerCase().trim();
+      await db.update(users).set(updates).where(eq(users.email, emailKey));
+      return true;
+    } catch (err) {
+      console.error('❌ User profile update error:', err);
       throw err;
     }
   },

@@ -385,6 +385,7 @@ async function handler(req, res) {
         const newCount = (dup.donated_count || 0) + 1;
         const newDetail = dup.donated_detail ? `${dup.donated_detail}, ${currentDonation}` : currentDonation;
 
+        // Update donor record
         await dbRepo.updateDonor(dup.donorId, {
           name: body.name || dup.name,
           city: body.city || dup.city,
@@ -393,6 +394,14 @@ async function handler(req, res) {
           timestamp: Date.now(), // Update last registration time
           registeredOn: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })
         });
+
+        // Update user profile with first 4 questions
+        await dbRepo.updateUserProfile(emailKey, {
+          name: body.name || dup.name,
+          dob: body.dob || dup.dob,
+          city: body.city || dup.city,
+          donationType: body.type || dup.type,
+        }).catch(e => console.error('User profile update failed:', e));
 
         // Send email for update too
         sendRegistrationEmail({ ...dup, ...body, donated_count: newCount }).catch(e => console.error('Email update trigger failed:', e));
@@ -429,14 +438,29 @@ async function handler(req, res) {
     console.log('DEBUG record before save:', record);
 
     try {
-      const result = await dbRepo.saveDonor(record);
+      // Save first 4 questions to users table
+      const userProfile = {
+        name: body.name || '',
+        dob: body.dob || '',
+        city: body.city || '',
+        donationType: body.type || '',
+        email: emailKey,
+        phone: phoneKey,
+        password: '', // Empty for form submissions
+      };
+      
+      await dbRepo.saveUserProfile(userProfile);
+      console.log(`✅ User profile saved for ${userProfile.name}`);
+
+      // Save remaining data to donors table
+      const donorResult = await dbRepo.saveDonor(record);
       
       // Fire-and-forget email sending (don't block the response)
       if (record.email) {
         sendRegistrationEmail(record).catch(e => console.error('Email trigger failed:', e));
       }
 
-      return sendJSON(res, 201, { success: true, donorId: record.donorId, dbId: result.id });
+      return sendJSON(res, 201, { success: true, donorId: record.donorId, dbId: donorResult.id });
     } catch (err) {
       console.error('❌ POST /api/donors Error:', err);
       return sendJSON(res, 500, { error: 'Failed to save donor to database.' });

@@ -48,6 +48,9 @@ export const users = pgTable(
   {
     id: serial('id').primaryKey(),
     name: varchar('name', { length: 255 }).notNull(),
+    dob: varchar('dob', { length: 50 }),
+    city: varchar('city', { length: 100 }),
+    donationType: varchar('donation_type', { length: 50 }),
     email: varchar('email', { length: 255 }).notNull().unique(),
     phone: varchar('phone', { length: 20 }),
     password: text('password').notNull(),
