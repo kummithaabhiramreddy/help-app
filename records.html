@@ -283,54 +283,102 @@
     : '';
 
   async function loadRecords() {
-    const userId = localStorage.getItem('userId');
-    const email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
-    const phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+    let userId = localStorage.getItem('userId') || '';
+    let email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+    let phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
 
-    // If a specific donorId is selected, try to load that specific one first
-    if (userId) {
+    // Fallback to bhm_reg_list if primary values are missing
+    if (!email && !phone && !userId) {
       try {
-        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.donor) {
-            return displayRecords(data.donor);
-          }
+        const regList = JSON.parse(localStorage.getItem('bhm_reg_list') || '[]');
+        if (regList && regList.length > 0) {
+          const latest = regList[regList.length - 1];
+          email = latest.email || '';
+          phone = latest.phone || '';
+          userId = latest.donorId || '';
         }
-      } catch (err) {
-        console.warn('Specific donor fetch failed, falling back to account match', err);
-      }
+      } catch (e) { console.warn('bhm_reg_list parse error', e); }
     }
 
-    // Try auto-match by account (email/phone)
+    console.log('Records Debug:', { userId, email, phone });
+
+    // ALWAYS try email/phone match FIRST — this queries the Neon DB donors table
+    let foundDonor = null;
+    let foundDonors = [];
+    
     if (email || phone) {
       try {
         const params = new URLSearchParams();
         if (email) params.set('email', email);
         if (phone) params.set('phone', phone);
+        console.log('Fetching by-account:', params.toString());
         const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString());
         if (res.ok) {
           const data = await res.json();
-          if (data.total === 1) {
-             return displayRecords(data.donors[0]);
-          } else if (data.total > 1) {
-             return displayMultipleRecords(data.donors);
+          console.log('by-account response:', data);
+          if (data.donors && data.donors.length > 0) {
+            foundDonors = data.donors;
           }
         }
       } catch (e) { 
-        console.warn('Auto-match failed', e); 
+        console.warn('by-account fetch failed', e); 
       }
     }
 
-    // If we have login info but no records found
+    // Fallback: try by specific donorId if we have one and haven't found a donor yet
+    if (foundDonors.length === 0 && userId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.donor) {
+            foundDonors = [data.donor];
+          }
+        }
+      } catch (err) {
+        console.warn('Donor ID fetch failed', err);
+      }
+    }
+
+    // Ultimate Fallback: Fetch ALL donors and match locally if backend filters are failing
+    if (foundDonors.length === 0 && (email || phone)) {
+      try {
+        console.log('Ultimate fallback: fetching all donors to find match locally');
+        const res = await fetch(`${API_BASE}/api/donors`);
+        if (res.ok) {
+          const data = await res.json();
+          const allDonors = data.donors || [];
+          const emailQ = email.toLowerCase().trim();
+          const phoneQ = phone.replace(/\D/g, '').slice(-10);
+          
+          foundDonors = allDonors.filter(d => {
+            const dEmail = (d.email || '').toLowerCase().trim();
+            const dPhone = (d.phone || '').replace(/\D/g, '').slice(-10);
+            return (emailQ && dEmail === emailQ) || (phoneQ && dPhone === phoneQ);
+          });
+          console.log('Local fallback matched:', foundDonors.length);
+        }
+      } catch (e) {
+        console.warn('Ultimate fallback failed', e);
+      }
+    }
+
+    if (foundDonors.length === 1) {
+      return displayRecords(foundDonors[0]);
+    } else if (foundDonors.length > 1) {
+      return displayMultipleRecords(foundDonors);
+    }
+
+    // Nothing found — show appropriate message
     if (email || phone || userId) {
       document.getElementById('recordsContent').innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">📝</div>
-          <div>No records found for your account.</div>
-          <div style="font-size: 12px; margin-top: 10px; color: var(--muted);">If you just registered, your records will appear here.</div>
-          <div style="margin-top: 20px;">
-            <a href="form.html" style="color: var(--red); text-decoration: none;">Go to Registration</a>
+          <div>No donor records found for your account</div>
+          <div style="font-size: 12px; margin-top: 10px; color: var(--muted);">
+            Account email: <strong>${email || 'not set'}</strong><br>
+            Account phone: <strong>${phone || 'not set'}</strong><br>
+            <span style="margin-top:8px;display:block;">Make sure you registered as a donor with the same email/phone in <a href="form.html" style="color:var(--red);">the registration form</a>.</span>
           </div>
         </div>
       `;

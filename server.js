@@ -416,7 +416,7 @@ async function handler(req, res) {
           if (daysPassed < 90) {
             const daysLeft = Math.ceil(90 - daysPassed);
             console.warn(`⏳ Donor ${dup.donorId} is within 90-day cooldown. (${daysLeft} days left)`);
-            return sendJSON(res, 409, { error: 'Donor already registered for Blood within 90 days.', daysLeft });
+            return sendJSON(res, 409, { error: 'Donor already registered for Blood within 90 days.', daysLeft, donorId: dup.donorId });
           }
         }
 

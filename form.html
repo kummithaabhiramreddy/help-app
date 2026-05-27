@@ -2269,9 +2269,18 @@
           if (!res.ok) {
             if (res.status === 409) {
               const daysLeft = dbResult.daysLeft || null;
-              et.innerHTML = '<strong>Registration blocked</strong><br>It looks like you have already registered for Blood recently.' + (daysLeft ? '<br>Please wait ' + daysLeft + ' day(s) before registering again.' : '');
+              et.innerHTML = '<strong>Registration blocked</strong><br>It looks like you have already registered for Blood recently.' + (daysLeft ? '<br>Please wait ' + daysLeft + ' day(s) before registering again.' : '') + '<br><small>Your account is now linked. Visit the <a href="records.html" style="color:var(--cyan);text-decoration:underline;">Records Page</a>.</small>';
               et.style.display = 'block';
               btn.disabled = false; btnText.textContent = '🩸 Send My Donor Card'; spinner.style.display = 'none';
+              
+              // Still log them in if we got a donorId back
+              if (dbResult.donorId) {
+                localStorage.setItem('userId', dbResult.donorId);
+                localStorage.setItem('userName', name);
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userPhone', phone);
+                localStorage.setItem('userBloodGroup', bloodGroup);
+              }
               return;
             }
             throw new Error(dbResult.error || `Database save failed (${res.status})`);
@@ -2292,6 +2301,13 @@
             const regList2 = JSON.parse(localStorage.getItem('bhm_reg_list') || '[]');
             regList2.push({ email: email.toLowerCase().trim(), phone: phone.replace(/\D/g, ''), donorId, donationType, timestamp: Date.now() });
             localStorage.setItem('bhm_reg_list', JSON.stringify(regList2));
+
+            // Set global user variables so records.html works immediately after registration
+            localStorage.setItem('userId', donorId);
+            localStorage.setItem('userName', name);
+            localStorage.setItem('userEmail', email);
+            localStorage.setItem('userPhone', phone);
+            localStorage.setItem('userBloodGroup', bloodGroup);
           } catch (e) { }
 
           // 4. SHOW SUCCESS
