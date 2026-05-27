@@ -851,6 +851,13 @@
 
   // ── Onboarding Logic ──
   document.addEventListener('DOMContentLoaded', () => {
+    const isLoggedOut = localStorage.getItem('loggedOut') === 'true';
+    const userId = localStorage.getItem('userId');
+    if (isLoggedOut && !userId) {
+      window.location.replace('form.html');
+      return;
+    }
+
     loadAccountInfo();
     const isComplete = localStorage.getItem('onboardingComplete');
     if (!isComplete) {
@@ -897,7 +904,10 @@
       localStorage.setItem('userPhone', phone);
       localStorage.setItem('userBloodGroup', bloodGroup);
       localStorage.setItem('onboardingComplete', 'true');
-      if (data.donorId) localStorage.setItem('userId', data.donorId); // save donor ID
+      if (data.donorId) {
+        localStorage.setItem('userId', data.donorId); // save donor ID
+        localStorage.removeItem('loggedOut');
+      }
 
       document.getElementById('onboardingOverlay').classList.remove('active');
       updateDashboardData();

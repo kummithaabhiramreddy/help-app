@@ -273,7 +273,12 @@
       localStorage.removeItem('userPhone');
       localStorage.removeItem('userBloodGroup');
       localStorage.removeItem('onboardingComplete');
-      window.location.href = 'index.html';
+      localStorage.removeItem('name');
+      localStorage.removeItem('email');
+      localStorage.removeItem('phone');
+      localStorage.removeItem('bloodgroup');
+      localStorage.setItem('loggedOut', 'true');
+      window.location.replace('form.html');
     }
   }
 
