@@ -850,11 +850,32 @@
     : '';
 
   // ── Onboarding Logic ──
+  function exitApp() {
+    try {
+      window.close();
+    } catch (e) {
+      // Fall back to blank screen if window.close is blocked
+      window.location.replace('about:blank');
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     const isLoggedOut = localStorage.getItem('loggedOut') === 'true';
     const userId = localStorage.getItem('userId');
     if (isLoggedOut && !userId) {
-      window.location.replace('form.html');
+      history.pushState({ loggedOut: true }, '');
+      window.addEventListener('popstate', () => {
+        const step1 = document.getElementById('onboardingStep1');
+        const overlay = document.getElementById('onboardingOverlay');
+        if (overlay.classList.contains('active') && step1.classList.contains('active')) {
+          exitApp();
+        }
+      });
+
+      document.querySelectorAll('.onboarding-step').forEach(el => el.classList.remove('active'));
+      document.getElementById('onboardingStep1').classList.add('active');
+      document.getElementById('onboardingOverlay').classList.add('active');
+      loadAccountInfo();
       return;
     }
 
@@ -890,7 +911,7 @@
 
     try {
       const payload = { name, email, phone, bloodgroup: bloodGroup, type: 'Blood' };
-      const res = await fetch(`${API_BASE}/api/donors`, {
+      const res = await fetch(`${API_BASE}/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -904,10 +925,9 @@
       localStorage.setItem('userPhone', phone);
       localStorage.setItem('userBloodGroup', bloodGroup);
       localStorage.setItem('onboardingComplete', 'true');
-      if (data.donorId) {
-        localStorage.setItem('userId', data.donorId); // save donor ID
-        localStorage.removeItem('loggedOut');
-      }
+      localStorage.removeItem('userId');
+      localStorage.removeItem('donorId');
+      localStorage.removeItem('loggedOut');
 
       document.getElementById('onboardingOverlay').classList.remove('active');
       updateDashboardData();
@@ -1050,6 +1070,12 @@
 
   // ── Donor banner - navigate to form ──
   document.querySelector('.donor-banner')?.addEventListener('click', () => {
+    const isLoggedOut = localStorage.getItem('loggedOut') === 'true';
+    const userId = localStorage.getItem('userId');
+    if (isLoggedOut && !userId) {
+      alert('Please complete the first question flow before proceeding.');
+      return;
+    }
     window.location.href = 'form.html';
   });
 </script>
