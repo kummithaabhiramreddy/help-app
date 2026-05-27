@@ -2267,7 +2267,16 @@
           }
 
 
-          if (!res.ok) throw new Error(dbResult.error || `Database save failed (${res.status})`);
+          if (!res.ok) {
+            if (res.status === 409) {
+              const daysLeft = dbResult.daysLeft || null;
+              et.innerHTML = '<strong>Registration blocked</strong><br>It looks like you have already registered for Blood recently.' + (daysLeft ? '<br>Please wait ' + daysLeft + ' day(s) before registering again.' : '');
+              et.style.display = 'block';
+              btn.disabled = false; btnText.textContent = '🩸 Send My Donor Card'; spinner.style.display = 'none';
+              return;
+            }
+            throw new Error(dbResult.error || `Database save failed (${res.status})`);
+          }
           console.log('✅ SQL Save Successful:', dbResult.donorId);
 
 

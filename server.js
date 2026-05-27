@@ -36,6 +36,9 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
+// In-memory map of Server-Sent Event connections: donorId -> array of response objects
+const sseClients = new Map();
+
 /* ── Parse JSON body ── */
 function readBody(req) {
   return new Promise((resolve, reject) => {
@@ -405,35 +408,33 @@ async function handler(req, res) {
       });
 
       if (dup) {
-        console.log(`♻️ Existing donor found (${dup.donorId}). Updating stats instead of creating new row.`);
+        console.log(`♻️ Existing donor found (${dup.donorId}).`);
 
-        // Check cooldown for Blood donors
+        // If both existing and incoming registrations include Blood, enforce 90-day cooldown
         if ((body.type === 'Blood' || body.type === 'Both') && (dup.type === 'Blood' || dup.type === 'Both')) {
-          const daysPassed = (Date.now() - dup.timestamp) / 86400000;
+          const daysPassed = (Date.now() - Number(dup.timestamp || 0)) / 86400000;
           if (daysPassed < 90) {
             const daysLeft = Math.ceil(90 - daysPassed);
             console.warn(`⏳ Donor ${dup.donorId} is within 90-day cooldown. (${daysLeft} days left)`);
-            // We can still allow updating, but maybe warn the user on frontend.
-            // For now, let's allow it but just log the registration as a new "donation" event.
+            return sendJSON(res, 409, { error: 'Donor already registered for Blood within 90 days.', daysLeft });
           }
         }
 
+        // Proceed to update record (outside cooldown)
         const currentDonation = body.type === 'Blood' ? `Blood (${body.bloodgroup || 'N/A'})` : (body.type === 'Both' ? `Blood (${body.bloodgroup || 'N/A'}) & Organ (${Array.isArray(body.organs) ? body.organs.join('/') : ''})` : `Organ (${Array.isArray(body.organs) ? body.organs.join('/') : ''})`);
 
         const newCount = (dup.donated_count || 0) + 1;
         const newDetail = dup.donated_detail ? `${dup.donated_detail}, ${currentDonation}` : currentDonation;
 
-        // Update donor record
         await dbRepo.updateDonor(dup.donorId, {
           name: body.name || dup.name,
           city: body.city || dup.city,
           donated_count: newCount,
           donated_detail: newDetail,
-          timestamp: Date.now(), // Update last registration time
+          timestamp: Date.now(),
           registeredOn: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })
         });
 
-        // Update user profile with first 4 questions
         await dbRepo.updateUserProfile(emailKey, {
           name: body.name || dup.name,
           dob: body.dob || dup.dob,
@@ -441,7 +442,6 @@ async function handler(req, res) {
           donationType: body.type || dup.type,
         }).catch(e => console.error('User profile update failed:', e));
 
-        // Send email for update too
         sendRegistrationEmail({ ...dup, ...body, donated_count: newCount }).catch(e => console.error('Email update trigger failed:', e));
 
         return sendJSON(res, 201, { success: true, donorId: dup.donorId, updated: true, donated_count: newCount });
@@ -590,6 +590,24 @@ async function handler(req, res) {
         details: body.details || ''
       });
 
+      // Notify connected clients (SSE) for this donorId, if any
+      try {
+        const clients = sseClients.get(body.donorId);
+        if (clients && clients.length) {
+          const payload = JSON.stringify({ type: 'emergency_request', donorId: body.donorId, requesterName: body.requesterName, details: body.details || '', timestamp: Date.now() });
+          clients.forEach((clientRes) => {
+            try {
+              clientRes.write(`event: emergency_request\n`);
+              clientRes.write(`data: ${payload}\n\n`);
+            } catch (e) {
+              // ignore individual client write failures
+            }
+          });
+        }
+      } catch (e) {
+        console.error('SSE notify error:', e);
+      }
+
       return sendJSON(res, 200, { success: true });
     } catch (err) {
       console.error('❌ Request Log Error:', err);
@@ -606,6 +624,58 @@ async function handler(req, res) {
       return sendJSON(res, 200, { total: requests.length, requests });
     } catch (err) {
       return sendJSON(res, 500, { error: 'Failed to retrieve requests.' });
+    }
+  }
+
+  // Server-Sent Events subscription for notifications
+  if (req.method === 'GET' && pathname === '/api/notifications/subscribe') {
+    const donorId = query.donorId || query.userId;
+    if (!donorId) {
+      return sendJSON(res, 400, { error: 'donorId or userId required' });
+    }
+
+    // Set SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    res.write(':ok\n\n'); // initial comment
+
+    const arr = sseClients.get(donorId) || [];
+    arr.push(res);
+    sseClients.set(donorId, arr);
+
+    req.on('close', () => {
+      const list = sseClients.get(donorId) || [];
+      const filtered = list.filter(r => r !== res);
+      if (filtered.length) sseClients.set(donorId, filtered); else sseClients.delete(donorId);
+    });
+
+    return; // keep connection open
+  }
+
+  // Match donor by email or phone (used by frontend to auto-find account)
+  if (req.method === 'GET' && pathname === '/api/donors/match') {
+    try {
+      const emailQ = (query.email || '').toLowerCase().trim();
+      const phoneQ = (query.phone || '').replace(/\D/g, '').slice(-10);
+
+      const donors = await dbRepo.getAllDonors();
+      const match = donors.find(d => {
+        const dPhone = (d.phone || '').replace(/\D/g, '').slice(-10);
+        const emailMatch = emailQ && d.email && d.email.toLowerCase().trim() === emailQ;
+        const phoneMatch = phoneQ && dPhone && dPhone === phoneQ;
+        return emailMatch || phoneMatch;
+      });
+
+      if (!match) return sendJSON(res, 404, { found: false });
+      return sendJSON(res, 200, { found: true, donor: match });
+    } catch (err) {
+      console.error('Donor match error:', err);
+      return sendJSON(res, 500, { error: 'Donor match failed' });
     }
   }
 

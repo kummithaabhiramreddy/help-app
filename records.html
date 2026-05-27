@@ -285,6 +285,24 @@
   async function loadRecords() {
     const userId = localStorage.getItem('userId');
     if (!userId) {
+      // Try to auto-match by email/phone before showing login prompt
+      const email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+      const phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+      if (email || phone) {
+        try {
+          const params = new URLSearchParams();
+          if (email) params.set('email', email);
+          if (phone) params.set('phone', phone.replace(/\D/g, '').slice(-10));
+          const res = await fetch(`${API_BASE}/api/donors/match?` + params.toString());
+          if (res.ok) {
+            const data = await res.json();
+            if (data.found && data.donor) {
+              localStorage.setItem('userId', data.donor.donorId || data.donor.id);
+              return loadRecords(); // retry now that userId is set
+            }
+          }
+        } catch (e) { console.warn('Auto-match failed', e); }
+      }
       document.getElementById('recordsContent').innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
