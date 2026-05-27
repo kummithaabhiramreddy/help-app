@@ -1818,10 +1818,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script>
     // Global API Configuration (Force Port 3000 for Database)
-    // Global API Configuration
-    // Use relative path for production, localhost:3000 for local dev
-    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-      ? 'http://localhost:3000' 
+    // Use localhost:3000 for local dev or when the page is opened directly from the file system
+    const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
       : '';
 
     
