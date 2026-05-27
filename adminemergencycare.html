@@ -626,7 +626,7 @@ function renderTable(){
   const q=document.getElementById('searchInput').value;
   const rows = getFiltered(q).map(p=>`
     <tr onclick="selectPatient(${p.id})" class="${selectedId===p.id?'selected':''}">
-      <td><div class="patient-cell"><div class="avatar">${ini(p.requesterName)}</div><div><div class="patient-name">${p.requesterName}</div><div class="patient-phone">${p.donorId}</div></div></div></td>
+      <td><div class="patient-cell"><div class="avatar">${ini(p.requesterName)}</div><div><div class="patient-name">${p.requesterName}</div><div class="patient-phone" style="color: var(--cyan); font-family: monospace;">Ref ID: ${p.donorId}</div></div></div></td>
       <td><span class="need-badge">${needLbl(p.need)}</span></td>
       <td><span class="blood-badge">🩸 ${p.blood}</span></td>
       <td>${p.organs==='—'?'<span style="color:var(--text3)">—</span>':p.organs.split(',').map(o=>`<span class="organ-tag">${o.trim()}</span>`).join('')}</td>
@@ -657,7 +657,7 @@ function renderCards(){
         <div class="pc-av">${ini(p.requesterName)}</div>
         <div style="flex:1;min-width:0">
           <div class="pc-name">${p.requesterName}</div>
-          <div class="pc-phone">Donor: ${p.donorId}</div>
+          <div class="pc-phone" style="color: var(--cyan); font-family: monospace;">Ref ID: ${p.donorId}</div>
         </div>
         <span class="sev-badge ${sevCls(p.severity)}" style="flex-shrink:0">${p.severity}</span>
       </div>
@@ -713,7 +713,7 @@ function detailBodyHTML(p){
   return `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
       <div class="detail-avatar">${ini(p.requesterName)}</div>
-      <div><div class="detail-name">${p.requesterName}</div><div class="detail-sub">${p.donorId} · ${needLbl(p.need)}</div></div>
+      <div><div class="detail-name">${p.requesterName}</div><div class="detail-sub" style="color: var(--cyan); font-family: monospace;">Ref ID: ${p.donorId} · ${needLbl(p.need)}</div></div>
     </div>
     <div class="detail-section">
       <div class="detail-section-title">Request Info</div>
@@ -734,7 +734,7 @@ function selectPatient(id){
   if(!p)return;
   renderTable();
   document.getElementById('detailPanel').innerHTML=`
-    <div class="detail-header"><h3>Request Detail</h3><div class="detail-avatar-row"><div class="detail-avatar">${ini(p.requesterName)}</div><div><div class="detail-name">${p.requesterName}</div><div class="detail-sub">${p.donorId}</div></div></div></div>
+    <div class="detail-header"><h3>Request Detail</h3><div class="detail-avatar-row"><div class="detail-avatar">${ini(p.requesterName)}</div><div><div class="detail-name">${p.requesterName}</div><div class="detail-sub" style="color: var(--cyan); font-family: monospace;">Ref ID: ${p.donorId}</div></div></div></div>
     <div class="detail-body">${detailBodyHTML(p)}</div>`;
 }
 

@@ -284,25 +284,58 @@
 
   async function loadRecords() {
     const userId = localStorage.getItem('userId');
-    if (!userId) {
-      // Try to auto-match by email/phone before showing login prompt
-      const email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
-      const phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
-      if (email || phone) {
-        try {
-          // Query the API for all donors matching this email OR phone to show every donor card
-          const params = new URLSearchParams();
-          if (email) params.set('email', email);
-          if (phone) params.set('phone', phone);
-          const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString());
-          if (res.ok) {
-            const data = await res.json();
-            if (data.total && data.donors && data.donors.length) {
-              return displayMultipleRecords(data.donors);
-            }
+    const email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+    const phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+
+    // If a specific donorId is selected, try to load that specific one first
+    if (userId) {
+      try {
+        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.donor) {
+            return displayRecords(data.donor);
           }
-        } catch (e) { console.warn('Auto-match failed', e); }
+        }
+      } catch (err) {
+        console.warn('Specific donor fetch failed, falling back to account match', err);
       }
+    }
+
+    // Try auto-match by account (email/phone)
+    if (email || phone) {
+      try {
+        const params = new URLSearchParams();
+        if (email) params.set('email', email);
+        if (phone) params.set('phone', phone);
+        const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString());
+        if (res.ok) {
+          const data = await res.json();
+          if (data.total === 1) {
+             return displayRecords(data.donors[0]);
+          } else if (data.total > 1) {
+             return displayMultipleRecords(data.donors);
+          }
+        }
+      } catch (e) { 
+        console.warn('Auto-match failed', e); 
+      }
+    }
+
+    // If we have login info but no records found
+    if (email || phone || userId) {
+      document.getElementById('recordsContent').innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div>No records found for your account.</div>
+          <div style="font-size: 12px; margin-top: 10px; color: var(--muted);">If you just registered, your records will appear here.</div>
+          <div style="margin-top: 20px;">
+            <a href="form.html" style="color: var(--red); text-decoration: none;">Go to Registration</a>
+          </div>
+        </div>
+      `;
+    } else {
+      // Not logged in at all
       document.getElementById('recordsContent').innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">🔐</div>
@@ -312,36 +345,22 @@
           </div>
         </div>
       `;
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/donor/${userId}`);
-      const data = await res.json();
-      
-      if (!res.ok || !data.donor) {
-        throw new Error('Donor not found');
-      }
-
-      const donor = data.donor;
-      displayRecords(donor);
-    } catch (err) {
-      console.error('Error loading records:', err);
-      document.getElementById('recordsContent').innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">⚠️</div>
-          <div>Unable to load records</div>
-          <div style="margin-top: 10px; font-size: 12px; color: var(--muted);">${err.message}</div>
-        </div>
-      `;
     }
   }
 
   function displayRecords(donor) {
     const donatedCount = donor.donated_count || 0;
     const receivedCount = donor.received_count || 0;
-    const donatedDetail = donor.donated_detail ? JSON.parse(donor.donated_detail) : [];
-    const receivedDetail = donor.received_detail ? JSON.parse(donor.received_detail) : [];
+    
+    let donatedDetail = [];
+    try {
+      donatedDetail = donor.donated_detail ? (typeof donor.donated_detail === 'string' && donor.donated_detail.startsWith('[') ? JSON.parse(donor.donated_detail) : [{notes: donor.donated_detail}]) : [];
+    } catch(e) { donatedDetail = [{notes: donor.donated_detail}]; }
+    
+    let receivedDetail = [];
+    try {
+      receivedDetail = donor.received_detail ? (typeof donor.received_detail === 'string' && donor.received_detail.startsWith('[') ? JSON.parse(donor.received_detail) : [{notes: donor.received_detail}]) : [];
+    } catch(e) { receivedDetail = [{notes: donor.received_detail}]; }
 
     let html = `
       <!-- Donor Info Card -->
@@ -354,6 +373,14 @@
         <div class="info-row">
           <span class="info-label">Name</span>
           <span class="info-value">${donor.name}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <span class="info-value">${donor.email || 'N/A'}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Phone</span>
+          <span class="info-value">${donor.phone || 'N/A'}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Blood Group</span>
@@ -396,13 +423,13 @@
         html += `
           <div class="history-item">
             <div class="history-header">
-              <div class="history-type">Blood Group: ${item.bloodGroup}</div>
-              <div class="history-date">${new Date(item.date).toLocaleDateString()}</div>
+              <div class="history-type">Blood Group: ${item.bloodGroup || donor.bloodgroup || 'N/A'}</div>
+              <div class="history-date">${item.date ? new Date(item.date).toLocaleDateString() : donor.registeredOn || 'N/A'}</div>
             </div>
             <div class="history-details">
               ${item.recipient ? `<div>Recipient: ${item.recipient}</div>` : ''}
               ${item.hospital ? `<div>Hospital: ${item.hospital}</div>` : ''}
-              ${item.notes ? `<div>Notes: ${item.notes}</div>` : ''}
+              ${item.notes && item.notes !== 'None yet' ? `<div>Details: ${item.notes}</div>` : ''}
             </div>
           </div>
         `;
@@ -430,13 +457,14 @@
         html += `
           <div class="history-item">
             <div class="history-header">
-              <div class="history-type">Blood Group: ${item.bloodGroup}</div>
-              <div class="history-date">${new Date(item.date).toLocaleDateString()}</div>
+              <div class="history-type">Blood Group: ${item.bloodGroup || donor.bloodgroup || 'N/A'}</div>
+              <div class="history-date">${item.date ? new Date(item.date).toLocaleDateString() : donor.registeredOn || 'N/A'}</div>
             </div>
             <div class="history-details">
               ${item.donor ? `<div>Donor: ${item.donor}</div>` : ''}
               ${item.hospital ? `<div>Hospital: ${item.hospital}</div>` : ''}
               ${item.reason ? `<div>Reason: ${item.reason}</div>` : ''}
+              ${item.notes && item.notes !== 'None yet' ? `<div>Details: ${item.notes}</div>` : ''}
             </div>
           </div>
         `;
@@ -497,6 +525,14 @@
           <div class="info-row">
             <span class="info-label">Name</span>
             <span class="info-value">${d.name || 'Unknown'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">${d.email || 'N/A'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Phone</span>
+            <span class="info-value">${d.phone || 'N/A'}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Blood Group</span>
