@@ -146,6 +146,44 @@ async function handler(req, res) {
   }
 
   /* ══════════════════════════════════════════════
+     POST /api/users/profile — save onboarding user profile only
+  ══════════════════════════════════════════════ */
+  if (req.method === 'POST' && pathname === '/api/users/profile') {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      console.error('❌ Request Body Error:', err.message);
+      return sendJSON(res, 400, { error: 'Invalid request body.' });
+    }
+
+    console.log(`📥 Incoming user profile save: email=${body.email}`);
+
+    try {
+      if (!body.name || !body.email || !body.phone) {
+        return sendJSON(res, 400, { error: 'Missing required fields.' });
+      }
+
+      const profile = {
+        name: body.name,
+        dob: body.dob || '',
+        city: body.city || '',
+        donationType: body.donationType || body.type || '',
+        email: body.email,
+        phone: body.phone,
+        password: body.password || ''
+      };
+
+      const result = await dbRepo.saveUserProfile(profile);
+      console.log(`✅ User profile saved: ID ${result.id}`);
+      return sendJSON(res, 201, { success: true, id: result.id, updated: result.updated, created: result.created });
+    } catch (err) {
+      console.error('❌ User profile save error:', err);
+      return sendJSON(res, 500, { error: 'Failed to save user profile.' });
+    }
+  }
+
+  /* ══════════════════════════════════════════════
      POST /api/auth/login — authenticate user
   ══════════════════════════════════════════════ */
   if (req.method === 'POST' && pathname === '/api/auth/login') {
