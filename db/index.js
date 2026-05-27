@@ -675,17 +675,43 @@ export default {
    */
   saveUserProfile: async (userProfile) => {
     try {
+      const emailKey = String(userProfile.email || '').toLowerCase().trim();
+      const phoneKey = String(userProfile.phone || '').replace(/\D/g, '');
+
+      const existingUser = await db.select().from(users).where(
+        or(
+          emailKey ? eq(users.email, emailKey) : sql`false`,
+          phoneKey ? eq(users.phone, phoneKey) : sql`false`
+        )
+      ).limit(1);
+
+      if (existingUser.length) {
+        const existing = existingUser[0];
+        const updates = {
+          name: userProfile.name || existing.name,
+          dob: userProfile.dob || existing.dob,
+          city: userProfile.city || existing.city,
+          donationType: userProfile.donationType || existing.donationType,
+          email: emailKey || existing.email,
+          phone: phoneKey || existing.phone,
+          password: userProfile.password !== undefined ? userProfile.password : existing.password,
+        };
+
+        await db.update(users).set(updates).where(eq(users.id, existing.id));
+        return { id: existing.id, updated: true };
+      }
+
       const result = await db.insert(users).values({
         name: userProfile.name,
         dob: userProfile.dob,
         city: userProfile.city,
         donationType: userProfile.donationType,
-        email: userProfile.email,
-        phone: userProfile.phone,
+        email: emailKey,
+        phone: phoneKey,
         password: userProfile.password || '',
       }).returning({ id: users.id });
 
-      return { id: result[0]?.id };
+      return { id: result[0]?.id, created: true };
     } catch (err) {
       console.error('❌ User profile save error:', err);
       throw err;
