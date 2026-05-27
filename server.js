@@ -608,7 +608,7 @@ async function handler(req, res) {
         console.error('SSE notify error:', e);
       }
 
-      return sendJSON(res, 200, { success: true });
+      return sendJSON(res, 200, { success: true, donorId: body.donorId });
     } catch (err) {
       console.error('❌ Request Log Error:', err);
       return sendJSON(res, 500, { error: 'Failed to log emergency request.' });
@@ -676,6 +676,46 @@ async function handler(req, res) {
     } catch (err) {
       console.error('Donor match error:', err);
       return sendJSON(res, 500, { error: 'Donor match failed' });
+    }
+  }
+
+  // Get donors by email (returns all donor records that share the same email)
+  if (req.method === 'GET' && pathname === '/api/donors/by-email') {
+    try {
+      const emailQ = (query.email || '').toLowerCase().trim();
+      if (!emailQ) return sendJSON(res, 400, { error: 'Email required' });
+
+      const donors = await dbRepo.getAllDonors();
+      const matches = donors.filter(d => d.email && d.email.toLowerCase().trim() === emailQ);
+
+      return sendJSON(res, 200, { total: matches.length, donors: matches });
+    } catch (err) {
+      console.error('Donors by-email error:', err);
+      return sendJSON(res, 500, { error: 'Failed to fetch donors by email' });
+    }
+  }
+
+  // Get donors by account (matches by email OR phone — used by Records page)
+  if (req.method === 'GET' && pathname === '/api/donors/by-account') {
+    try {
+      const emailQ = (query.email || '').toLowerCase().trim();
+      const phoneQ = (query.phone || '').replace(/\D/g, '').slice(-10);
+
+      if (!emailQ && !phoneQ) return sendJSON(res, 400, { error: 'Email or phone required' });
+
+      const allDonors = await dbRepo.getAllDonors();
+      const matches = allDonors.filter(d => {
+        const dEmail = (d.email || '').toLowerCase().trim();
+        const dPhone = (d.phone || '').replace(/\D/g, '').slice(-10);
+        const emailMatch = emailQ && dEmail && dEmail === emailQ;
+        const phoneMatch = phoneQ && dPhone && dPhone === phoneQ;
+        return emailMatch || phoneMatch;
+      });
+
+      return sendJSON(res, 200, { total: matches.length, donors: matches });
+    } catch (err) {
+      console.error('Donors by-account error:', err);
+      return sendJSON(res, 500, { error: 'Failed to fetch donors by account' });
     }
   }
 
@@ -913,12 +953,34 @@ async function handler(req, res) {
         return sendJSON(res, 404, { error: 'Donor not found.' });
       }
 
-      // Parse JSON fields if they exist
+      // Parse JSON fields if they exist and normalize text details
+      const normalizeDetail = (val) => {
+        try {
+          if (!val) return [];
+          if (Array.isArray(val)) return val;
+          if (typeof val === 'string') {
+            const s = val.trim();
+            if (!s) return [];
+            // If it looks like JSON array, parse it
+            if (s.startsWith('[') && s.endsWith(']')) {
+              try { return JSON.parse(s); } catch (e) { /* fallthrough */ }
+            }
+            // If it's a comma-separated string, split into items
+            if (s.includes(',')) return s.split(',').map(x => x.trim()).filter(x => x);
+            // Otherwise return single-item array
+            return [s];
+          }
+          return [];
+        } catch (e) {
+          return [];
+        }
+      };
+
       const donorData = {
         ...donor,
-        donated_detail: donor.donated_detail ? (typeof donor.donated_detail === 'string' ? JSON.parse(donor.donated_detail) : donor.donated_detail) : [],
-        received_detail: donor.received_detail ? (typeof donor.received_detail === 'string' ? JSON.parse(donor.received_detail) : donor.received_detail) : [],
-        organs: donor.organs ? (typeof donor.organs === 'string' ? donor.organs.split(',').map(o => o.trim()) : donor.organs) : []
+        donated_detail: normalizeDetail(donor.donated_detail),
+        received_detail: normalizeDetail(donor.received_detail),
+        organs: donor.organs ? (typeof donor.organs === 'string' ? donor.organs.split(',').map(o => o.trim()).filter(Boolean) : donor.organs) : []
       };
 
       return sendJSON(res, 200, { donor: donorData });

@@ -580,9 +580,16 @@
   })
     .then(res => res.json())
     .then(resData => {
-      const ref = resData.success ? data.donorId : '—';
+      // Use server-returned donorId, fallback to local data
+      const ref = resData.success ? (resData.donorId || data.donorId) : '—';
       document.getElementById('refNum').textContent = ref;
       document.getElementById('successScreen').classList.add('active');
+
+      // Store patient email/phone so Records page can match donor cards
+      const pEmail = document.getElementById('patientEmail').value.trim();
+      const pPhone = document.getElementById('patientPhone').value.trim();
+      if (pEmail) localStorage.setItem('userEmail', pEmail);
+      if (pPhone) localStorage.setItem('userPhone', pPhone);
     })
     .catch(err => {
       console.error('❌ Emergency request submit error:', err);
