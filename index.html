@@ -844,10 +844,27 @@
 </nav>
 
 <script>
-  // ── API Base ──
-  const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-    ? 'http://localhost:3000' 
-    : '';
+  // ── API Base Fallback ──
+  const API_BASES = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? ['http://localhost:3001', 'http://localhost:3000']
+    : [''];
+
+  async function fetchApi(path, options = {}) {
+    let lastError;
+    for (const base of API_BASES) {
+      const url = base ? `${base}${path}` : path;
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) return res;
+        lastError = new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+
+  const API_BASE = API_BASES[0];
 
   // ── Onboarding Logic ──
   function exitApp() {
@@ -911,7 +928,7 @@
 
     try {
       const payload = { name, email, phone, bloodgroup: bloodGroup, type: 'Blood' };
-      const res = await fetch(`${API_BASE}/api/users/profile`, {
+      const res = await fetchApi(`/api/users/profile`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -931,7 +948,7 @@
 
       try {
         const params = new URLSearchParams({ email });
-        const mres = await fetch(`${API_BASE}/api/donors/by-email?` + params.toString());
+        const mres = await fetchApi(`/api/donors/by-email?` + params.toString());
         if (mres.ok) {
           const mdata = await mres.json();
           if (mdata.total && mdata.donors && mdata.donors.length) {
@@ -959,7 +976,7 @@
 
     // Fetch total donors
     try {
-      const res = await fetch(`${API_BASE}/api/stats`);
+      const res = await fetchApi(`/api/stats`);
       const data = await res.json();
       if (res.ok) {
         document.getElementById('nearestStat').textContent = data.total_donors;
@@ -985,7 +1002,7 @@
         const params = new URLSearchParams();
         if (email) params.set('email', email);
         if (phone) params.set('phone', phone);
-        const res = await fetch(`${API_BASE}/api/donors/match?` + params.toString());
+        const res = await fetchApi(`/api/donors/match?` + params.toString());
         if (res.ok) {
           const data = await res.json();
           if (data.found && data.donor) {
@@ -997,7 +1014,7 @@
 
     if ((!name || !email || !phone || !blood) && userId) {
       try {
-        const res = await fetch(`${API_BASE}/api/donor/${userId}`);
+        const res = await fetchApi(`/api/donor/${userId}`);
         if (res.ok) {
           const data = await res.json();
           const donor = data.donor || {};

@@ -278,9 +278,67 @@
 </nav>
 
 <script>
-  const API_BASE = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
-    ? 'http://localhost:3001' 
-    : '';
+  const API_BASES = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? ['http://localhost:3001', 'http://localhost:3000']
+    : [''];
+
+  async function fetchWithFallback(path, options = {}) {
+    let lastError;
+    for (const base of API_BASES) {
+      const url = base ? `${base}${path}` : path;
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) {
+          return res;
+        }
+        lastError = new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+
+  function renderAccountPrompt() {
+    const savedEmail = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+    const savedPhone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+
+    document.getElementById('recordsContent').innerHTML = `
+      <div class="card">
+        <div class="card-title">Find Your Records</div>
+        <div class="info-row" style="flex-direction:column; align-items:start; gap:10px;">
+          <span class="info-label">Enter the email or phone number used in your donor registration.</span>
+          <input id="recordEmail" type="email" placeholder="Email address" value="${savedEmail}" style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:var(--text); font-size:14px;" />
+          <input id="recordPhone" type="tel" placeholder="Phone number" value="${savedPhone}" style="width:100%; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:var(--text); font-size:14px;" />
+          <button onclick="saveAccountLookup()" style="width:100%; margin-top:8px; background:var(--red); color:white; border:none; border-radius:12px; padding:12px 0; cursor:pointer; font-weight:700;">Search My Records</button>
+        </div>
+      </div>
+      <div class="card" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);">
+        <div class="info-row" style="flex-direction:column; align-items:start; gap:6px;">
+          <span class="info-label">Detected stored account</span>
+          <span class="info-value">Email: ${savedEmail || 'not set'}</span>
+          <span class="info-value">Phone: ${savedPhone || 'not set'}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function saveAccountLookup() {
+    const emailInput = document.getElementById('recordEmail');
+    const phoneInput = document.getElementById('recordPhone');
+    const email = emailInput ? emailInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+
+    if (!email && !phone) {
+      alert('Please enter your registered email or phone number to find donor records.');
+      return;
+    }
+
+    if (email) localStorage.setItem('userEmail', email);
+    if (phone) localStorage.setItem('userPhone', phone);
+    localStorage.removeItem('userId');
+    loadRecords();
+  }
 
   async function loadRecords() {
     let userId = localStorage.getItem('userId') || '';
@@ -300,6 +358,10 @@
       } catch (e) { console.warn('bhm_reg_list parse error', e); }
     }
 
+    if (!email && !phone && !userId) {
+      return renderAccountPrompt();
+    }
+
     console.log('Records Debug:', { userId, email, phone });
 
     // ALWAYS try email/phone match FIRST — this queries the Neon DB donors table
@@ -312,7 +374,7 @@
         if (email) params.set('email', email);
         if (phone) params.set('phone', String(phone));
         console.log('Fetching by-account:', params.toString());
-        const res = await fetch(`${API_BASE}/api/donors/by-account?` + params.toString(), { signal: AbortSignal.timeout(8000) });
+        const res = await fetchWithFallback(`/api/donors/by-account?` + params.toString(), { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           console.log('by-account response:', data);
@@ -328,7 +390,7 @@
     // Fallback: try by specific donorId if we have one and haven't found a donor yet
     if (foundDonors.length === 0 && userId) {
       try {
-        const res = await fetch(`${API_BASE}/api/donor/${userId}`, { signal: AbortSignal.timeout(8000) });
+        const res = await fetchWithFallback(`/api/donor/${userId}`, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           if (data.donor) {
@@ -346,7 +408,7 @@
     if (foundDonors.length === 0 && (email || phone)) {
       try {
         console.log('Ultimate fallback: fetching all donors to find match locally');
-        const res = await fetch(`${API_BASE}/api/donors`, { signal: AbortSignal.timeout(8000) });
+        const res = await fetchWithFallback(`/api/donors`, { signal: AbortSignal.timeout(8000) });
         if (res.ok) {
           const data = await res.json();
           const allDonors = data.donors || [];
@@ -379,14 +441,14 @@
       document.getElementById('recordsContent').innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">${connectionFailed ? '⚠️' : '📝'}</div>
-          <div>${connectionFailed ? 'Cannot connect to database server' : 'No donor records found for your account'}</div>
+          <div>${connectionFailed ? 'Cannot connect to database server' : 'No donor records matched your email or phone.'}</div>
           <div style="font-size: 12px; margin-top: 10px; color: var(--muted);">
             Account email: <strong>${email || 'not set'}</strong><br>
             Account phone: <strong>${phone || 'not set'}</strong><br>
             <span style="margin-top:8px;display:block;">
               ${connectionFailed 
                 ? 'Your backend server might be offline. Ensure Node.js is running if you are testing locally.' 
-                : 'Make sure you registered as a donor with the same email/phone in <a href="form.html" style="color:var(--red);">the registration form</a>.'}
+                : 'Try again with the email or phone number you used during donor registration, or update them in <a href="settings.html" style="color:var(--red);">Settings</a>.'}
             </span>
           </div>
         </div>
@@ -562,7 +624,8 @@
   function displayMultipleRecords(donors) {
     let html = `
       <div class="card">
-        <div class="card-title">Matching Donor Records</div>
+        <div class="card-title">Multiple Matches Found</div>
+        <div style="font-size: 13px; color: var(--muted);">Select the donor record that matches your registered email or phone number.</div>
       </div>
     `;
 
