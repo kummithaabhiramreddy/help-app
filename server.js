@@ -127,19 +127,31 @@ async function handler(req, res) {
     console.log(`📥 Incoming user registration: email=${body.email}`);
 
     try {
-      if (!body.email || !body.password || !body.name) {
+      const { name, email, password, dob, city, type } = body;
+      if (!email || !password || !name) {
         return sendJSON(res, 400, { error: 'Missing required fields.' });
       }
 
       // Check for existing user
-      const existingUser = await dbRepo.getUserByEmail(body.email);
+      const existingUser = await dbRepo.getUserByEmail(email);
       if (existingUser) {
         return sendJSON(res, 409, { error: 'User with this email already exists.' });
       }
 
       // Hash the password securely before saving
-      body.password = hashPassword(body.password);
-      const result = await dbRepo.createUser(body);
+      const hashedPassword = hashPassword(password);
+      
+      // Include optional profile fields in user creation
+      const result = await dbRepo.createUser({
+        name,
+        email,
+        phone: body.phone || '',
+        dob: dob || '',
+        city: city || '',
+        donationType: type || '',
+        password: hashedPassword,
+      });
+
       console.log(`✅  User created: ID ${result.id}`);
       return sendJSON(res, 201, { success: true, userId: result.id });
     } catch (err) {
