@@ -942,24 +942,30 @@
       localStorage.setItem('userPhone', phone);
       localStorage.setItem('userBloodGroup', bloodGroup);
       localStorage.setItem('onboardingComplete', 'true');
-      // keep existing userId if present; try to match donors by email and set userId if found
+      // keep existing userId if present; try to match donors by email or phone and set userId if found
       localStorage.removeItem('donorId');
       localStorage.removeItem('loggedOut');
 
+      let matchedDonor = false;
       try {
-        const params = new URLSearchParams({ email });
-        const mres = await fetchApi(`/api/donors/by-email?` + params.toString());
+        const params = new URLSearchParams();
+        if (email) params.set('email', email);
+        if (phone) params.set('phone', phone.replace(/\D/g, ''));
+        const mres = await fetchApi(`/api/donors/match?` + params.toString());
         if (mres.ok) {
           const mdata = await mres.json();
-          if (mdata.total && mdata.donors && mdata.donors.length) {
-            const first = mdata.donors[0];
-            localStorage.setItem('userId', first.donorId || first.id || '');
+          if (mdata.found && mdata.donor) {
+            localStorage.setItem('userId', mdata.donor.donorId || mdata.donor.id || '');
+            matchedDonor = true;
           }
         }
       } catch (e) { console.warn('Post-onboard donor match failed', e); }
 
       document.getElementById('onboardingOverlay').classList.remove('active');
       updateDashboardData();
+      if (matchedDonor) {
+        window.location.href = 'records.html';
+      }
     } catch (err) {
       alert('Error: ' + err.message);
       btn.textContent = 'Finish';
