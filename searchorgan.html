@@ -1252,10 +1252,9 @@
               ${d.phone ? `<a href="https://wa.me/91${d.phone.replace(/\D/g, '')}" target="_blank" class="rc-btn whatsapp">💬 WhatsApp</a>` : ''}
             </div>
             <div style="margin-top:20px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px;" id="org-box-${d.donorId}">
-              <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">📩 Send Organ Request?</p>
-              <input type="text" id="requester-${d.donorId}" placeholder="Your Full Name" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:white; padding:10px; border-radius:10px; font-size:0.75rem; outline:none;" required>
+              <p style="font-size: 0.72rem; color: rgba(255,255,255,0.5); font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">🏅 Update Donor Badge? (Log Donation)</p>
               <div style="display:flex; gap:10px;">
-                <button onclick="sendSMSRequest(this, '${d.phone}', '${d.name}', '${donorOrgans.join(', ')}', '${d.donorId}')" style="flex:1; background:var(--red); color:#fff; border:none; padding:10px; border-radius:10px; font-weight:900; cursor:pointer; font-size:0.75rem; font-family:Cinzel;">YES</button>
+                <button onclick="incrementBadge(this, '${donorOrgans.join(', ')}', '${d.donorId}')" style="flex:1; background:var(--red); color:#fff; border:none; padding:10px; border-radius:10px; font-weight:900; cursor:pointer; font-size:0.75rem; font-family:Cinzel;">YES</button>
                 <button onclick="document.getElementById('org-box-${d.donorId}').style.display='none'" style="flex:1; background:rgba(255,255,255,0.05); color:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.1); padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.75rem;">NO</button>
               </div>
             </div>
@@ -1272,44 +1271,37 @@
       }
     }
 
-    // ── sendSMSRequest (from File 2 — with btn param + fade-out animation) ──
-    async function sendSMSRequest(btn, phone, name, organs, donorId) {
-      let requesterName = document.getElementById(`requester-${donorId}`).value.trim();
-      if (!requesterName) {
-        requesterName = "Anonymous";
-      }
-
+    // ── incrementBadge — logs a donation and updates badge tier ──
+    async function incrementBadge(btn, organs, donorId) {
       const card = btn.closest('.result-card');
       card.classList.add('fade-out');
       setTimeout(() => {
         card.remove();
         if (document.querySelectorAll('.result-card').length === 0) {
-          document.getElementById('resultGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">✅</span>All donors requested. Search again for more.</div>`;
+          document.getElementById('resultGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><span class="empty-icon">✅</span>All donors processed. Search again for more.</div>`;
         }
       }, 500);
 
       try {
-        const res = await fetch(API_BASE + '/api/donors/request', {
+        const res = await fetch(API_BASE + '/api/donors/donate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             donorId: donorId,
-            requesterName: requesterName,
-            requestType: 'Organ',
-            organType: organs,
-            details: `Organ interest: ${organs}`
+            type: 'Organ',
+            organType: organs
           })
         });
 
         if (!res.ok) {
           const errText = await res.text();
-          console.error('Request logging failed:', res.status, errText);
-          alert('Failed to log organ request. Please try again.');
+          console.error('Badge update failed:', res.status, errText);
+          alert('Failed to update donor badge. Please try again.');
         } else {
-          console.log('Organ request logged successfully');
+          console.log('Donor badge updated successfully');
         }
       } catch (e) {
-        console.error('Logging failed', e);
+        console.error('Update failed', e);
         alert('Unable to contact server. Please check your connection.');
       }
     }

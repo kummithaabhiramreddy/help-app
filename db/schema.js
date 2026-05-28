@@ -9,6 +9,7 @@ export const donors = pgTable(
     dob: varchar('dob', { length: 50 }),
     bloodgroup: varchar('bloodgroup', { length: 10 }),
     type: varchar('type', { length: 50 }), // Blood, Organ, or Both
+    badge_name: varchar('badge_name', { length: 50 }).default('BRONZE'),
     organs: text('organs'),
     city: varchar('city', { length: 100 }),
     phone: varchar('phone', { length: 20 }),
@@ -33,6 +34,7 @@ export const emergencyRequests = pgTable(
     requestType: varchar('request_type', { length: 50 }), // Blood or Organ
     bloodGroup: varchar('blood_group', { length: 10 }),
     organType: text('organ_type'),
+    requesterPhone: varchar('requester_phone', { length: 20 }),
     details: text('details'),
     timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
     createdAt: timestamp('created_at').defaultNow(),
@@ -47,6 +49,7 @@ export const users = pgTable(
   'users',
   {
     id: serial('id').primaryKey(),
+    userid: varchar('userid', { length: 100 }),
     name: varchar('name', { length: 255 }).notNull(),
     dob: varchar('dob', { length: 50 }),
     city: varchar('city', { length: 100 }),

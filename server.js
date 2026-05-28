@@ -152,8 +152,8 @@ async function handler(req, res) {
         password: hashedPassword,
       });
 
-      console.log(`✅  User created: ID ${result.id}`);
-      return sendJSON(res, 201, { success: true, userId: result.id });
+      console.log(`✅  User created: ID ${result.id}, UserID: ${result.userid}`);
+      return sendJSON(res, 201, { success: true, userId: result.id, customUserId: result.userid });
     } catch (err) {
       console.error('❌ User Registration Error:', err);
       return sendJSON(res, 500, { error: 'Failed to create user account.' });
@@ -195,7 +195,7 @@ async function handler(req, res) {
       } else {
         console.log(`♻️  Existing user profile updated: ID ${result.id} (email=${body.email})`);
       }
-      return sendJSON(res, 201, { success: true, id: result.id, updated: result.updated || false, created: result.created || false });
+      return sendJSON(res, 201, { success: true, id: result.id, customUserId: result.userid, updated: result.updated || false, created: result.created || false });
     } catch (err) {
       console.error('❌ User profile save error:', err);
       return sendJSON(res, 500, { error: 'Failed to save user profile.' });
@@ -234,7 +234,7 @@ async function handler(req, res) {
       console.log(`✅  User logged in: ${user.name}`);
       return sendJSON(res, 200, {
         success: true,
-        user: { id: user.id, name: user.name, email: user.email }
+        user: { id: user.id, userid: user.userid, name: user.name, email: user.email }
       });
     } catch (err) {
       console.error('❌ Login Error:', err);
@@ -274,7 +274,7 @@ async function handler(req, res) {
           password: hashedPassword
         });
         
-        user = { id: result.id, name, email };
+        user = { id: result.id, userid: result.userid, name, email };
         console.log(`✅ New Google user created: ${email}`);
       } else {
         console.log(`✅ Existing Google user logged in: ${email}`);
@@ -282,7 +282,7 @@ async function handler(req, res) {
 
       return sendJSON(res, 200, {
         success: true,
-        user: { id: user.id, name: user.name, email: user.email }
+        user: { id: user.id, userid: user.userid, name: user.name, email: user.email }
       });
     } catch (err) {
       console.error('❌ Google Auth API Error:', err);
@@ -677,7 +677,24 @@ async function handler(req, res) {
       return sendJSON(res, 500, { error: 'Failed to retrieve requests.' });
     }
   }
-
+  /* ══════════════════════════════════════════════
+     GET /api/emergency-requests — get emergency requests by phone and optional range
+  ══════════════════════════════════════════════ */
+  if (req.method === 'GET' && pathname === '/api/emergency-requests') {
+    const phone = query.phone;
+    const range = query.range || 'all';
+    if (!phone) {
+      return sendJSON(res, 400, { error: 'Missing required query parameter: phone' });
+    }
+    try {
+      const requests = await dbRepo.getEmergencyRequestsByPhone(phone, range);
+      return sendJSON(res, 200, { total: requests.length, requests });
+    } catch (err) {
+      console.error('Error in /api/emergency-requests:', err);
+      return sendJSON(res, 500, { error: 'Failed to fetch emergency requests' });
+    }
+  }
+  
   // Server-Sent Events subscription for notifications
   if (req.method === 'GET' && pathname === '/api/notifications/subscribe') {
     const donorId = query.donorId || query.userId;
@@ -1005,6 +1022,18 @@ async function handler(req, res) {
      GET /api/donors/recent — recent registrations
   ══════════════════════════════════════════════ */
   /* ══════════════════════════════════════════════
+ // GET /api/users/:userid — fetch user record
+if (req.method === 'GET' && pathname.startsWith('/api/users/')) {
+  const userid = pathname.split('/').pop();
+  try {
+    const user = await dbRepo.getUserByUserId(userid);
+    if (!user) return sendJSON(res, 404, { error: 'User not found' });
+    return sendJSON(res, 200, { user });
+  } catch (err) {
+    console.error('❌ Get user error:', err);
+    return sendJSON(res, 500, { error: 'Failed to fetch user' });
+  }
+}
      GET /api/donor/:userId — fetch single donor record
   ══════════════════════════════════════════════ */
   if (req.method === 'GET' && pathname.startsWith('/api/donor/')) {

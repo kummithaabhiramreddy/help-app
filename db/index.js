@@ -5,7 +5,20 @@
 
 import { db } from './client.js';
 import { donors, users, emergencyRequests, otps, emergencyCare } from './schema.js';
-import { eq, or, ilike, gt, and, sql, desc, count, inArray } from 'drizzle-orm';
+import { eq, or, ilike, gt, and, gte, lt, sql, desc, count, inArray } from 'drizzle-orm';
+
+function calculateBadgeName(donatedCount, receivedCount) {
+  const donated = Number(donatedCount) || 0;
+  const received = Number(receivedCount) || 0;
+  const score = (donated * 10) - (received * 2);
+  const ratio = donated / (received + 1);
+  const finalScore = Math.floor(score + (ratio * 5));
+
+  if (finalScore <= 20) return 'BRONZE';
+  if (finalScore <= 50) return 'SILVER';
+  if (finalScore <= 100) return 'GOLD';
+  return 'DIAMOND';
+}
 
 export default {
   /**
@@ -30,6 +43,7 @@ export default {
         donated_detail: donor.donated_detail || '',
         received_count: donor.received_count || 0,
         received_detail: donor.received_detail || '',
+        badge_name: calculateBadgeName(donor.donated_count || 1, donor.received_count || 0),
       }).returning({ id: donors.id });
 
       return { id: result[0]?.id };
@@ -53,10 +67,14 @@ export default {
 
         const updatedDetail = currentDetail ? `${currentDetail}, ${newItem}` : newItem;
 
+        const newDonatedCount = (Number(donor[0].donated_count) || 0) + 1;
+        const newBadgeName = calculateBadgeName(newDonatedCount, donor[0].received_count);
+
         await db.update(donors)
           .set({
-            donated_count: sql`${donors.donated_count} + 1`,
-            donated_detail: updatedDetail
+            donated_count: newDonatedCount,
+            donated_detail: updatedDetail,
+            badge_name: newBadgeName
           })
           .where(eq(donors.donorId, data.donorId));
         return true;
@@ -78,6 +96,7 @@ export default {
       await db.insert(emergencyRequests).values({
         donorId: data.donorId,
         requesterName: data.requesterName,
+        requesterPhone: data.requesterPhone || null,
         requestType: data.requestType, // 'Blood' or 'Organ'
         bloodGroup: data.bloodGroup || null,
         organType: data.organType || null,
@@ -107,11 +126,14 @@ export default {
         const updatedDetail = currentDetail && currentDetail !== 'None yet' ? `${currentDetail}, ${newItem}` : newItem;
         const newCount = (Number(donor[0].received_count) || 0) + 1;
 
+        const newBadgeName = calculateBadgeName(donor[0].donated_count, newCount);
+
         // 3. Increment received count and update detail string
         await db.update(donors)
           .set({
             received_count: newCount,
-            received_detail: updatedDetail
+            received_detail: updatedDetail,
+            badge_name: newBadgeName
           })
           .where(eq(donors.donorId, data.donorId));
       }
@@ -185,6 +207,28 @@ export default {
       return await db.select().from(emergencyRequests).orderBy(desc(emergencyRequests.timestamp));
     } catch (err) {
       console.error('❌ Get all requests error:', err);
+      throw err;
+    }
+  },
+  /**
+   * Get emergency requests filtered by requester phone and optional time range
+   * range: 'this_week' (last 7 days), 'last_week' (7-14 days ago), 'all' (no filter)
+   */
+  getEmergencyRequestsByPhone: async (phone, range = 'all') => {
+    try {
+      let query = db.select().from(emergencyRequests).where(eq(emergencyRequests.requesterPhone, phone));
+      const now = Date.now();
+      if (range === 'this_week') {
+        const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+        query = query.where(and(gte(emergencyRequests.timestamp, weekAgo), lt(emergencyRequests.timestamp, now)));
+      } else if (range === 'last_week') {
+        const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+        const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+        query = query.where(and(gte(emergencyRequests.timestamp, twoWeeksAgo), lt(emergencyRequests.timestamp, weekAgo)));
+      }
+      return await query.orderBy(desc(emergencyRequests.timestamp));
+    } catch (err) {
+      console.error('❌ Get emergency requests by phone error:', err);
       throw err;
     }
   },
@@ -707,7 +751,14 @@ export default {
         password: user.password,
       }).returning({ id: users.id });
 
-      return { id: result[0]?.id };
+      const id = result[0]?.id;
+      let userid = null;
+      if (id) {
+        userid = `HELP-${String(id).padStart(4, '0')}`;
+        await db.update(users).set({ userid }).where(eq(users.id, id));
+      }
+
+      return { id, userid };
     } catch (err) {
       console.error('❌ User creation error:', err);
       throw err;
@@ -748,9 +799,15 @@ export default {
           password: userProfile.password !== undefined ? userProfile.password : existing.password,
         };
 
+        let userid = existing.userid;
+        if (!userid) {
+          userid = `HELP-${String(existing.id).padStart(4, '0')}`;
+          updates.userid = userid;
+        }
+
         await db.update(users).set(updates).where(eq(users.id, existing.id));
         console.log(`♻️  User profile updated (existing user id=${existing.id}, email=${emailKey})`);
-        return { id: existing.id, updated: true, created: false };
+        return { id: existing.id, userid, updated: true, created: false };
       }
 
       // Email not found → INSERT as a brand-new user
@@ -764,8 +821,15 @@ export default {
         password: userProfile.password || '',
       }).returning({ id: users.id });
 
-      console.log(`🆕 New user created (id=${result[0]?.id}, email=${emailKey})`);
-      return { id: result[0]?.id, created: true, updated: false };
+      const id = result[0]?.id;
+      let userid = null;
+      if (id) {
+        userid = `HELP-${String(id).padStart(4, '0')}`;
+        await db.update(users).set({ userid }).where(eq(users.id, id));
+      }
+
+      console.log(`🆕 New user created (id=${id}, email=${emailKey})`);
+      return { id, userid, created: true, updated: false };
     } catch (err) {
       console.error('❌ User profile save error:', err);
       throw err;

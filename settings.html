@@ -181,6 +181,66 @@
     .nav-item.active .nav-label {
       color: var(--red);
     }
+
+    /* Donor Status Card & Button Styling */
+    .primary-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--red);
+      border: 1px solid var(--red);
+      color: white;
+      border-radius: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 12px;
+      text-align: center;
+      display: inline-block;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .primary-btn:hover {
+      background: #e62230;
+    }
+
+    .primary-btn:active {
+      transform: scale(0.98);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.blood {
+      background: rgba(255, 45, 59, 0.2);
+      color: var(--red);
+    }
+
+    .badge.organ {
+      background: rgba(0, 229, 255, 0.2);
+      color: #00E5FF;
+    }
+
+    .badge.both {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00FF88;
+    }
+
+    .badge.unregistered {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
@@ -207,6 +267,29 @@
     </div>
   </div>
 
+  <!-- Donor Profile Status Card -->
+  <div class="card" id="donorStatusCard">
+    <div class="card-title" style="color: var(--red); display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <span>Donor Profile Status</span>
+      <span id="donorBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; display: none;"></span>
+    </div>
+    <div id="donorStatusLoading" style="text-align: center; padding: 16px 0; color: var(--muted); font-size: 14px;">
+      <span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 8px;">⏳</span> Searching database...
+    </div>
+    <div id="donorStatusContent" style="display: none;">
+      <!-- Loaded dynamically via script -->
+    </div>
+  </div>
+
+  <!-- Emergency Services Card -->
+  <div class="card" id="emergencyCareCard">
+    <div class="card-title">Emergency Services</div>
+    <div class="setting-row" style="cursor:pointer;" id="emergencyCareOption">
+      <span class="setting-label">Emergency Care Receipt</span>
+      <span class="setting-value" style="color: var(--red); font-weight: 600;">View →</span>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title">Account</div>
     <div class="setting-row">
@@ -226,7 +309,7 @@
       <span style="font-size: 12px; color: var(--muted);" id="accBloodDisplay">...</span>
     </div>
     <div class="setting-row">
-      <span class="setting-label">User ID</span>
+      <span class="setting-label">Account User ID</span>
       <span style="font-size: 12px; color: var(--muted);" id="userIdDisplay">...</span>
     </div>
     <div style="margin-top: 16px;">
@@ -261,6 +344,27 @@
 </nav>
 
 <script>
+  const API_BASES = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+    ? ['http://localhost:3001', 'http://localhost:3000']
+    : [''];
+
+  async function fetchWithFallback(path, options = {}) {
+    let lastError;
+    for (const base of API_BASES) {
+      const url = base ? `${base}${path}` : path;
+      try {
+        const res = await fetch(url, options);
+        if (res.ok) {
+          return res;
+        }
+        lastError = new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError;
+  }
+
   function toggleSetting(el) {
     el.classList.toggle('active');
   }
@@ -277,6 +381,7 @@
       localStorage.removeItem('email');
       localStorage.removeItem('phone');
       localStorage.removeItem('bloodgroup');
+      localStorage.removeItem('customUserId');
       localStorage.setItem('loggedOut', 'true');
       window.location.replace('index.html');
     }
@@ -299,14 +404,234 @@
     }
   }
 
+  async function checkDonorStatus() {
+    const loadingEl = document.getElementById('donorStatusLoading');
+    const contentEl = document.getElementById('donorStatusContent');
+    const badgeEl = document.getElementById('donorBadge');
+
+    let email = localStorage.getItem('userEmail') || localStorage.getItem('email') || '';
+    let phone = localStorage.getItem('userPhone') || localStorage.getItem('phone') || '';
+    let userId = localStorage.getItem('userId') || '';
+
+    // Try bhm_reg_list if primary values are missing
+    if (!email && !phone && !userId) {
+      try {
+        const regList = JSON.parse(localStorage.getItem('bhm_reg_list') || '[]');
+        if (regList && regList.length > 0) {
+          const latest = regList[regList.length - 1];
+          email = latest.email || '';
+          phone = latest.phone || '';
+          userId = latest.donorId || '';
+        }
+      } catch (e) {
+        console.warn('bhm_reg_list parse error', e);
+      }
+    }
+
+    if (!email && !phone && !userId) {
+      loadingEl.style.display = 'none';
+      badgeEl.textContent = 'UNREGISTERED';
+      badgeEl.className = 'badge unregistered';
+      badgeEl.style.display = 'inline-block';
+      contentEl.innerHTML = `
+        <div style="font-size: 14px; color: var(--muted); margin-bottom: 12px; line-height: 1.5;">
+          You are not registered as a donor. Register now to save lives.
+        </div>
+        <a href="form.html" class="primary-btn">Register as a Donor</a>
+      `;
+      contentEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      let foundDonors = [];
+
+      // Query by account email/phone match first
+      if (email || phone) {
+        try {
+          const params = new URLSearchParams();
+          if (email) params.set('email', email);
+          if (phone) params.set('phone', String(phone));
+          const res = await fetchWithFallback(`/api/donors/by-account?` + params.toString());
+          if (res.ok) {
+            const data = await res.json();
+            if (data.donors && data.donors.length > 0) {
+              foundDonors = data.donors;
+            }
+          }
+        } catch (e) {
+          console.warn('by-account check failed', e);
+        }
+      }
+
+      // Try by specific donorId if we have one and haven't found a donor yet
+      if (foundDonors.length === 0 && userId) {
+        try {
+          const res = await fetchWithFallback(`/api/donor/${userId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.donor) {
+              foundDonors = [data.donor];
+            }
+          }
+        } catch (err) {
+          console.warn('Donor ID fetch failed', err);
+        }
+      }
+
+      loadingEl.style.display = 'none';
+
+      if (foundDonors.length > 0) {
+        const donor = foundDonors[0];
+        badgeEl.textContent = 'REGISTERED';
+        badgeEl.className = 'badge both';
+        badgeEl.style.display = 'inline-block';
+
+        let typeBadgeClass = 'badge both';
+        if (donor.type === 'Blood') typeBadgeClass = 'badge blood';
+        if (donor.type === 'Organ') typeBadgeClass = 'badge organ';
+
+        contentEl.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="setting-row" style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span class="setting-label">Donor ID</span>
+              <span style="font-size: 13px; color: var(--cyan); font-family: monospace; font-weight: 600;">${donor.donorId || donor.id}</span>
+            </div>
+            <div class="setting-row" style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span class="setting-label">Type</span>
+              <span class="${typeBadgeClass}">${donor.type || 'N/A'}</span>
+            </div>
+            <div class="setting-row" style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+              <span class="setting-label">City</span>
+              <span style="font-size: 13px; color: var(--text);">${donor.city || 'N/A'}</span>
+            </div>
+            <div class="setting-row" style="padding: 10px 0; border-bottom: none;">
+              <span class="setting-label">Registered On</span>
+              <span style="font-size: 13px; color: var(--muted);">${donor.registeredOn || 'N/A'}</span>
+            </div>
+          </div>
+        `;
+      } else {
+        // Display "You are not registered as a donor" in that place
+        badgeEl.textContent = 'UNREGISTERED';
+        badgeEl.className = 'badge unregistered';
+        badgeEl.style.display = 'inline-block';
+        contentEl.innerHTML = `
+          <div style="font-size: 14px; color: var(--muted); margin-bottom: 12px; line-height: 1.5;">
+            You are not registered as a donor.
+          </div>
+          <a href="form.html" class="primary-btn">Register as a Donor</a>
+        `;
+      }
+      contentEl.style.display = 'block';
+    } catch (err) {
+      console.error('Error fetching donor status:', err);
+      loadingEl.style.display = 'none';
+      contentEl.innerHTML = `
+        <div style="font-size: 14px; color: var(--red); margin-bottom: 12px; line-height: 1.5;">
+          Failed to fetch donor status. Please check your network connection.
+        </div>
+        <button class="primary-btn" onclick="checkDonorStatus()">Retry Search</button>
+      `;
+      contentEl.style.display = 'block';
+    }
+  }
+
   // Display account details
   document.getElementById('accNameDisplay').textContent = localStorage.getItem('userName') || 'Not provided';
   document.getElementById('accEmailDisplay').textContent = localStorage.getItem('userEmail') || 'Not provided';
   document.getElementById('accPhoneDisplay').textContent = localStorage.getItem('userPhone') || 'Not provided';
   document.getElementById('accBloodDisplay').textContent = localStorage.getItem('userBloodGroup') || 'Not provided';
 
-  const userId = localStorage.getItem('userId');
-  document.getElementById('userIdDisplay').textContent = userId ? userId.substring(0, 8) + '...' : 'Not logged in';
+
+
+  // Load user details from Neon DB via API if we have a userId
+  async function loadUserDetails() {
+    const uid = localStorage.getItem('userId');
+    if (!uid) return;
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(uid)}`);
+      if (!res.ok) throw new Error('Failed to fetch user data');
+      const data = await res.json();
+      const user = data.user || {};
+      // Update the displayed user ID in the account card
+      document.getElementById('userIdDisplay').textContent = user.id || uid;
+    } catch (e) {
+      console.warn('User details fetch error', e);
+      document.getElementById('userIdDisplay').textContent = 'Unavailable';
+    }
+  }
+
+  // Trigger load on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    loadUserDetails();
+    checkDonorStatus();
+  });</script>
+
+<!-- Emergency Care Receipt Modal -->
+<div id="emergencyModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:10000;">
+  <div class="modal-content" style="background:#1a1a1a; padding:20px; border-radius:8px; width:90%; max-width:500px; color:#fff;">
+    <h3 style="margin-top:0;">Emergency Care Receipt</h3>
+    <label>Phone Number (SIM):</label>
+    <input type="text" id="emergencyPhone" placeholder="Enter phone number" style="width:100%; padding:8px; margin:8px 0; background:#2a2a2a; border:none; color:#fff;"/>
+    <label>Time Range:</label>
+    <select id="emergencyRange" style="width:100%; padding:8px; margin:8px 0; background:#2a2a2a; border:none; color:#fff;">
+      <option value="this_week">This Week</option>
+      <option value="last_week">Last Week</option>
+      <option value="all">All Weeks</option>
+    </select>
+    <button id="emergencyFetchBtn" class="primary-btn" style="margin-top:10px; width:100%;">Fetch Receipt</button>
+    <div id="emergencyResult" style="margin-top:15px; max-height:300px; overflow:auto; background:#111; padding:10px; border-radius:4px; display:none;"></div>
+    <div style="margin-top:10px; text-align:right;">
+      <button id="emergencyClose" class="secondary-btn" style="margin-right:5px;">Close</button>
+      <button id="emergencyPrint" class="primary-btn" style="display:none;">Print</button>
+    </div>
+  </div>
+</div>
+<script>
+  document.getElementById('emergencyCareOption').addEventListener('click', () => {
+      window.location.href = 'emergencycare.html';
+    });
+  document.getElementById('emergencyClose').addEventListener('click', () => {
+    document.getElementById('emergencyModal').style.display = 'none';
+    document.getElementById('emergencyResult').style.display = 'none';
+    document.getElementById('emergencyPrint').style.display = 'none';
+  });
+  document.getElementById('emergencyFetchBtn').addEventListener('click', async () => {
+    const phone = document.getElementById('emergencyPhone').value.trim();
+    const range = document.getElementById('emergencyRange').value;
+    if (!phone) { alert('Enter phone number'); return; }
+    try {
+      const res = await fetch(`/api/emergency-requests?phone=${encodeURIComponent(phone)}&range=${range}`);
+      if (!res.ok) throw new Error('Fetch error');
+      const data = await res.json();
+      const container = document.getElementById('emergencyResult');
+      if (data.requests && data.requests.length) {
+        let html = '<table style="width:100%; border-collapse:collapse; color:#fff;"><tr><th style="border-bottom:1px solid #555; text-align:left;">Date</th><th style="border-bottom:1px solid #555; text-align:left;">Patient Name</th><th style="border-bottom:1px solid #555; text-align:left;">Reference ID</th></tr>';
+        data.requests.forEach(r => {
+          const date = new Date(r.timestamp).toLocaleString();
+          html += `<tr><td style="padding:4px;">${date}</td><td style="padding:4px;">${r.requesterName}</td><td style="padding:4px;">${r.id}</td></tr>`;
+        });
+        html += '</table>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+        document.getElementById('emergencyPrint').style.display = 'inline-block';
+      } else {
+        container.innerHTML = '<p>No records found.</p>';
+        container.style.display = 'block';
+        document.getElementById('emergencyPrint').style.display = 'none';
+      }
+    } catch (e) {
+      alert('Error fetching data');
+    }
+  });
+  document.getElementById('emergencyPrint').addEventListener('click', () => {
+    const printContent = document.getElementById('emergencyResult').innerHTML;
+    const w = window.open('', '', 'width=800,height=600');
+    w.document.write('<html><head><title>Emergency Receipt</title></head><body style="background:#1a1a1a; color:#fff; font-family:Arial;">' + printContent + '</body></html>');
+    w.document.close();
+    w.print();
+  });
 </script>
 
 </body>

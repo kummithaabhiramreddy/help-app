@@ -813,10 +813,9 @@ const API_BASE = (window.location.protocol === 'file:' || window.location.hostna
               <a href="https://wa.me/91${d.phone.replace(/\D/g, '')}" target="_blank" class="btn whatsapp">💬 WhatsApp</a>
             </div>
             <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; flex-direction:column; gap:10px;" id="req-box-${d.donorId}">
-              <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600;">📩 Send Emergency Request?</p>
-              <input type="text" id="requester-${d.donorId}" placeholder="Enter Your Name" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); color:white; padding:8px; border-radius:6px; font-size:0.75rem; outline:none;" required>
+              <p style="font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 600;">🏅 Update Donor Badge? (Log Donation)</p>
               <div style="display:flex; gap:10px;">
-                <button onclick="sendSMSRequest(this, '${d.phone}', '${d.name}', '${d.bloodgroup}', '${d.donorId}')" style="flex:1; background:#4CAF50; color:#fff; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">YES</button>
+                <button onclick="incrementBadge(this, '${d.bloodgroup}', '${d.donorId}')" style="flex:1; background:#4CAF50; color:#fff; border:none; padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">YES</button>
                 <button onclick="document.getElementById('req-box-${d.donorId}').style.display='none'" style="flex:1; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:8px; border-radius:6px; font-weight:700; cursor:pointer; font-size:0.75rem;">NO</button>
               </div>
             </div>
@@ -824,45 +823,38 @@ const API_BASE = (window.location.protocol === 'file:' || window.location.hostna
       });
     }
 
-    async function sendSMSRequest(btn, phone, name, blood, donorId) {
-      let requesterName = document.getElementById(`requester-${donorId}`).value.trim();
-      if (!requesterName) {
-        requesterName = "Anonymous";
-      }
-
+    async function incrementBadge(btn, blood, donorId) {
       // Hide the card with animation
       const card = btn.closest('.result-card');
       card.classList.add('fade-out');
       setTimeout(() => {
         card.remove();
         if (document.querySelectorAll('.result-card').length === 0) {
-          document.getElementById('results').innerHTML = `<p style="color:#ff6b7a;margin-top:20px;text-align:center;font-weight:700;">✅ All donors requested. Search again for more.</p>`;
+          document.getElementById('results').innerHTML = `<p style="color:#ff6b7a;margin-top:20px;text-align:center;font-weight:700;">✅ All donors processed. Search again for more.</p>`;
         }
       }, 500);
 
       // Log to Database in background
       try {
-        const res = await fetch(API_BASE + '/api/donors/request', {
+        const res = await fetch(API_BASE + '/api/donors/donate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             donorId: donorId,
-            requesterName: requesterName,
-            requestType: 'Blood',
-            bloodGroup: blood,
-            details: `Blood needed: ${blood}`
+            type: 'Blood',
+            bloodGroup: blood
           })
         });
 
         if (!res.ok) {
           const errText = await res.text();
-          console.error('Request logging failed:', res.status, errText);
-          alert('Failed to log emergency request. Please try again.');
+          console.error('Badge update failed:', res.status, errText);
+          alert('Failed to update donor badge. Please try again.');
         } else {
-          console.log('Emergency request logged successfully');
+          console.log('Donor badge updated successfully');
         }
       } catch (e) {
-        console.error('Logging failed', e);
+        console.error('Update failed', e);
         alert('Unable to contact server. Please check your connection.');
       }
     }

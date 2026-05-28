@@ -937,6 +937,9 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to register');
 
+      if (data.customUserId) {
+        localStorage.setItem('customUserId', data.customUserId);
+      }
       localStorage.setItem('userName', name);
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userPhone', phone);
