@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Emergency Requests</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --red: #ff2d3b;
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --text: #f2f2f5;
+      --muted: rgba(242,242,245,0.45);
+    }
+    * {margin:0;padding:0;box-sizing:border-box;}
+    body {background:var(--bg);font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh;max-width:420px;margin:auto;overflow-x:hidden;}
+    .header {padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;}
+    .back-btn {width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .container {padding:20px 24px;}
+    .card {background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;}
+    .card-title {font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;}
+    .select-row {margin-bottom:12px;display:flex;flex-direction:column;}
+    .select-row label {margin-bottom:4px;font-size:14px;}
+    .select-row select {padding:8px;background:#1a1a1a;border:none;color:#fff;}
+    .receipt {border:1px solid var(--border);border-radius:8px;padding:12px;margin:8px 0;background:#111;}
+    .receipt-header {font-size:14px;color:var(--muted);margin-bottom:4px;}
+    .receipt-body {font-size:13px;color:var(--text);}
+    .primary-btn {width:100%;padding:12px;background:var(--red);border:none;color:#fff;border-radius:8px;margin-top:8px;cursor:pointer;}
+    .primary-btn:hover {background:#e62230;}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="back-btn" onclick="window.close();">←</div>
+    <h1>Emergency Requests</h1>
+  </div>
+  <div class="container">
+    <div class="card">
+      <div class="card-title">Filters</div>
+      <div class="select-row">
+        <label for="weekSelect">Week</label>
+        <select id="weekSelect">
+          <option value="this_week">This Week</option>
+          <option value="last_week">Last Week</option>
+          <option value="all">All Weeks</option>
+        </select>
+      </div>
+      <div class="select-row">
+        <label for="simSelect">SIM (Device)</label>
+        <select id="simSelect">
+          <option value="">Loading...</option>
+        </select>
+      </div>
+      <button class="primary-btn" id="searchBtn">Search</button>
+    </div>
+    <div id="resultsContainer"></div>
+  </div>
+
+  <script>
+    const API_BASES = (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? ['http://localhost:3001','http://localhost:3000']
+      : [''];
+
+    async function fetchWithFallback(path){
+      for(const base of API_BASES){
+        const url = base ? `${base}${path}` : path;
+        try{ const res = await fetch(url); if(res.ok) return await res.json(); }
+        catch(e){ }
+      }
+      throw new Error('Network error');
+    }
+
+    // Populate SIM list from emergency requests
+    async function loadSims(){
+      try {
+        // Fetch all requests to extract unique donor IDs (acts like SIM IDs)
+        const allData = await fetchWithFallback('/api/emergency-requests?range=all');
+        const sims = new Set();
+        (allData.requests || []).forEach(r => {
+          if (r.donor_id) sims.add(r.donor_id);
+        });
+        const sel = document.getElementById('simSelect');
+        sel.innerHTML = '<option value="">Select device</option>' + [...sims].map(id => `<option value="${id}">${id}</option>`).join('');
+      } catch(e){
+        console.error('Failed to load SIMs', e);
+        const sel = document.getElementById('simSelect');
+        sel.innerHTML = '<option value="">Error loading devices</option>';
+      }
+    }
+
+    function formatDate(d){
+      const date = new Date(d);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    async function searchRequests(){
+      const week = document.getElementById('weekSelect').value;
+      const simId = document.getElementById('simSelect').value;
+      if(!simId){ alert('Select a device'); return; }
+      const container = document.getElementById('resultsContainer');
+      container.innerHTML = '<p style="color:var(--muted)">Loading...</p>';
+      try{
+        const query = `?phone=${encodeURIComponent(simId)}&range=${week}`;
+        const data = await fetchWithFallback('/api/emergency-requests' + query);
+        if(!data.requests || data.requests.length===0){
+          container.innerHTML = '<p style="color:var(--muted)">No records found.</p>';
+          return;
+        }
+        const frag=document.createDocumentFragment();
+        data.requests.forEach(r=>{
+          const div=document.createElement('div');
+          div.className='receipt';
+          div.innerHTML = `
+            <div class='receipt-header'>Requested on ${formatDate(r.timestamp)}</div>
+            <div class='receipt-body'>
+              <strong>SIM:</strong> ${r.simId}<br/>
+              <strong>Patient:</strong> ${r.patientName}<br/>
+              <strong>City:</strong> ${r.city}<br/>
+            </div>
+            <button class='primary-btn' onclick='printReceipt(this)'>Print</button>
+          `;
+          frag.appendChild(div);
+        });
+        container.innerHTML='';
+        container.appendChild(frag);
+      }catch(err){
+        console.error(err);
+        container.innerHTML = '<p style="color:var(--red)">Error loading data.</p>';
+      }
+    }
+
+    function printReceipt(btn){
+      const receipt = btn.parentElement.cloneNode(true);
+      const w = window.open('', '', 'width=800,height=600');
+      w.document.write('<html><head><title>Receipt</title></head><body style="background:#111;color:#fff;font-family:Arial;margin:20px;">');
+      w.document.write(receipt.outerHTML);
+      w.document.write('</body></html>');
+      w.document.close();
+      w.print();
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', searchRequests);
+    loadSims();
+  </script>
+</body>
+</html>

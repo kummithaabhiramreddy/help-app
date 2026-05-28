@@ -214,9 +214,10 @@ export default {
    * Get emergency requests filtered by requester phone and optional time range
    * range: 'this_week' (last 7 days), 'last_week' (7-14 days ago), 'all' (no filter)
    */
-  getEmergencyRequestsByPhone: async (phone, range = 'all') => {
+  getEmergencyRequestsByPhone: async (identifier, range = 'all') => {
     try {
-      let query = db.select().from(emergencyRequests).where(eq(emergencyRequests.requesterPhone, phone));
+      // Use requesterName as identifier (acts like SIM/phone)
+      let query = db.select().from(emergencyRequests).where(eq(emergencyRequests.requesterName, identifier));
       const now = Date.now();
       if (range === 'this_week') {
         const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -228,7 +229,7 @@ export default {
       }
       return await query.orderBy(desc(emergencyRequests.timestamp));
     } catch (err) {
-      console.error('❌ Get emergency requests by phone error:', err);
+      console.error('❌ Get emergency requests by identifier error:', err);
       throw err;
     }
   },

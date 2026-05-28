@@ -284,10 +284,11 @@
   <!-- Emergency Services Card -->
   <div class="card" id="emergencyCareCard">
     <div class="card-title">Emergency Services</div>
-    <div class="setting-row" style="cursor:pointer;" id="emergencyCareOption">
-      <span class="setting-label">Emergency Care Receipt</span>
-      <span class="setting-value" style="color: var(--red); font-weight: 600;">View →</span>
-    </div>
+      <!-- Emergency Requests option removed -->
+      <div class="setting-row" style="cursor:pointer;" id="emergencyCareOption" onclick="window.location.href='emergency_care.html'">
+        <span class="setting-label">Emergency Care Receipt</span>
+        <span class="setting-value" style="color: var(--red); font-weight: 600;">View →</span>
+      </div>
   </div>
 
   <div class="card">
@@ -562,7 +563,10 @@
     }
   }
 
-  // Trigger load on page load
+  // viewEmergencyRequests element removed – no longer needed
+  // document.getElementById('viewEmergencyRequests').addEventListener('click', () => {
+  //   window.open('emergency_requests.html', '_blank');
+  // });
   window.addEventListener('DOMContentLoaded', () => {
     loadUserDetails();
     checkDonorStatus();
@@ -572,8 +576,10 @@
 <div id="emergencyModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); justify-content:center; align-items:center; z-index:10000;">
   <div class="modal-content" style="background:#1a1a1a; padding:20px; border-radius:8px; width:90%; max-width:500px; color:#fff;">
     <h3 style="margin-top:0;">Emergency Care Receipt</h3>
-    <label>Phone Number (SIM):</label>
-    <input type="text" id="emergencyPhone" placeholder="Enter phone number" style="width:100%; padding:8px; margin:8px 0; background:#2a2a2a; border:none; color:#fff;"/>
+    <label>Device SIM (Donor ID):</label>
+    <select id="emergencySimSelect" style="width:100%; padding:8px; margin:8px 0; background:#2a2a2a; border:none; color:#fff;">
+      <option value="">Select device</option>
+    </select>
     <label>Time Range:</label>
     <select id="emergencyRange" style="width:100%; padding:8px; margin:8px 0; background:#2a2a2a; border:none; color:#fff;">
       <option value="this_week">This Week</option>
@@ -589,42 +595,61 @@
   </div>
 </div>
 <script>
-  document.getElementById('emergencyCareOption').addEventListener('click', () => {
-      window.location.href = 'emergencycare.html';
-    });
-  document.getElementById('emergencyClose').addEventListener('click', () => {
-    document.getElementById('emergencyModal').style.display = 'none';
-    document.getElementById('emergencyResult').style.display = 'none';
-    document.getElementById('emergencyPrint').style.display = 'none';
-  });
-  document.getElementById('emergencyFetchBtn').addEventListener('click', async () => {
-    const phone = document.getElementById('emergencyPhone').value.trim();
-    const range = document.getElementById('emergencyRange').value;
-    if (!phone) { alert('Enter phone number'); return; }
-    try {
-      const res = await fetch(`/api/emergency-requests?phone=${encodeURIComponent(phone)}&range=${range}`);
-      if (!res.ok) throw new Error('Fetch error');
-      const data = await res.json();
-      const container = document.getElementById('emergencyResult');
-      if (data.requests && data.requests.length) {
-        let html = '<table style="width:100%; border-collapse:collapse; color:#fff;"><tr><th style="border-bottom:1px solid #555; text-align:left;">Date</th><th style="border-bottom:1px solid #555; text-align:left;">Patient Name</th><th style="border-bottom:1px solid #555; text-align:left;">Reference ID</th></tr>';
-        data.requests.forEach(r => {
-          const date = new Date(r.timestamp).toLocaleString();
-          html += `<tr><td style="padding:4px;">${date}</td><td style="padding:4px;">${r.requesterName}</td><td style="padding:4px;">${r.id}</td></tr>`;
+    // Load all device SIMs (donor IDs) for emergency receipt selection
+    async function loadEmergencySims(){
+      try{
+        const allData = await fetchWithFallback('/api/emergency-requests?range=all');
+        const sims = new Set();
+        (allData.requests||[]).forEach(r => {
+          if(r.donor_id) sims.add(r.donor_id);
         });
-        html += '</table>';
-        container.innerHTML = html;
-        container.style.display = 'block';
-        document.getElementById('emergencyPrint').style.display = 'inline-block';
-      } else {
-        container.innerHTML = '<p>No records found.</p>';
-        container.style.display = 'block';
-        document.getElementById('emergencyPrint').style.display = 'none';
+        const sel = document.getElementById('emergencySimSelect');
+        sel.innerHTML = '<option value="">Select device</option>' + [...sims].map(id => `<option value="${id}">${id}</option>`).join('');
+      }catch(e){
+        console.error('Failed to load device SIMs', e);
+        const sel = document.getElementById('emergencySimSelect');
+        sel.innerHTML = '<option value="">Error loading devices</option>';
       }
-    } catch (e) {
-      alert('Error fetching data');
     }
-  });
+    // Open Emergency Care Receipt modal
+function showEmergencyModal() {
+  loadEmergencySims();
+  document.getElementById('emergencyModal').style.display = 'flex';
+}
+
+    document.getElementById('emergencyClose').addEventListener('click', () => {
+      document.getElementById('emergencyModal').style.display = 'none';
+      document.getElementById('emergencyResult').style.display = 'none';
+      document.getElementById('emergencyPrint').style.display = 'none';
+    });
+    document.getElementById('emergencyFetchBtn').addEventListener('click', async () => {
+      const sim = document.getElementById('emergencySimSelect').value.trim();
+      const range = document.getElementById('emergencyRange').value;
+      if (!sim) { alert('Select a device'); return; }
+      try {
+        const res = await fetch(`/api/emergency-requests?phone=${encodeURIComponent(sim)}&range=${range}`);
+        if (!res.ok) throw new Error('Fetch error');
+        const data = await res.json();
+        const container = document.getElementById('emergencyResult');
+        if (data.requests && data.requests.length) {
+          let html = '<table style="width:100%; border-collapse:collapse; color:#fff;"><tr><th style="border-bottom:1px solid #555; text-align:left;">Date</th><th style="border-bottom:1px solid #555; text-align:left;">Patient Name</th><th style="border-bottom:1px solid #555; text-align:left;">Reference ID</th></tr>';
+          data.requests.forEach(r => {
+            const date = new Date(r.timestamp).toLocaleString();
+            html += `<tr><td style="padding:4px;">${date}</td><td style="padding:4px;">${r.requester_name}</td><td style="padding:4px;">${r.id}</td></tr>`;
+          });
+          html += '</table>';
+          container.innerHTML = html;
+          container.style.display = 'block';
+          document.getElementById('emergencyPrint').style.display = 'inline-block';
+        } else {
+          container.innerHTML = '<p>No records found.</p>';
+          container.style.display = 'block';
+          document.getElementById('emergencyPrint').style.display = 'none';
+        }
+      } catch (e) {
+        alert('Error fetching data');
+      }
+    });
   document.getElementById('emergencyPrint').addEventListener('click', () => {
     const printContent = document.getElementById('emergencyResult').innerHTML;
     const w = window.open('', '', 'width=800,height=600');
