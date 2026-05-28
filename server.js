@@ -190,8 +190,12 @@ async function handler(req, res) {
       };
 
       const result = await dbRepo.saveUserProfile(profile);
-      console.log(`✅ User profile saved: ID ${result.id}`);
-      return sendJSON(res, 201, { success: true, id: result.id, updated: result.updated, created: result.created });
+      if (result.created) {
+        console.log(`🆕 NEW user profile created: ID ${result.id} (email=${body.email})`);
+      } else {
+        console.log(`♻️  Existing user profile updated: ID ${result.id} (email=${body.email})`);
+      }
+      return sendJSON(res, 201, { success: true, id: result.id, updated: result.updated || false, created: result.created || false });
     } catch (err) {
       console.error('❌ User profile save error:', err);
       return sendJSON(res, 500, { error: 'Failed to save user profile.' });
@@ -512,7 +516,9 @@ async function handler(req, res) {
     }
 
     try {
-      // Save first 4 questions to users table
+      // Save first 4 questions to users table (name, dob, city, donationType + email/phone)
+      // NEW logic: if email is not already in DB → INSERT new row (new user count +1)
+      //            if email already exists         → UPDATE existing row
       const userProfile = {
         name: body.name || '',
         dob: body.dob || '',
@@ -520,21 +526,30 @@ async function handler(req, res) {
         donationType: body.type || '',
         email: emailKey,
         phone: phoneKey,
-        password: '', // Empty for form submissions
+        password: '', // Empty for form submissions (no account password)
       };
-      
-      await dbRepo.saveUserProfile(userProfile);
-      console.log(`✅ User profile saved for ${userProfile.name}`);
 
-      // Save remaining data to donors table
+      const profileResult = await dbRepo.saveUserProfile(userProfile);
+      if (profileResult.created) {
+        console.log(`🆕 NEW user stored in users table: ID ${profileResult.id} (email=${emailKey})`);
+      } else {
+        console.log(`♻️  Returning user – profile updated: ID ${profileResult.id} (email=${emailKey})`);
+      }
+
+      // Save full donor record to donors table
       const donorResult = await dbRepo.saveDonor(record);
-      
-      // Fire-and-forget email sending (don't block the response)
+
+      // Fire-and-forget email (don't block the response)
       if (record.email) {
         sendRegistrationEmail(record).catch(e => console.error('Email trigger failed:', e));
       }
 
-      return sendJSON(res, 201, { success: true, donorId: record.donorId, dbId: donorResult.id });
+      return sendJSON(res, 201, {
+        success: true,
+        donorId: record.donorId,
+        dbId: donorResult.id,
+        newUser: profileResult.created || false,   // true = brand-new user in users table
+      });
     } catch (err) {
       console.error('❌ POST /api/donors Error:', err);
       return sendJSON(res, 500, { error: 'Failed to save donor to database.' });
@@ -855,6 +870,23 @@ async function handler(req, res) {
     }
   }
 
+
+  /* ══════════════════════════════════════════════
+     GET /api/users/count  — total new-user count
+     Returns the number of unique email addresses
+     stored in the users table. Every form submission
+     whose email is NOT already in the DB creates a
+     new row, so this number = total new users.
+  ══════════════════════════════════════════════ */
+  if (req.method === 'GET' && pathname === '/api/users/count') {
+    try {
+      const totalUsers = await dbRepo.getUserCount();
+      return sendJSON(res, 200, { success: true, total_users: totalUsers });
+    } catch (err) {
+      console.error('❌ /api/users/count error:', err);
+      return sendJSON(res, 500, { error: 'Failed to count users.' });
+    }
+  }
 
   /* ══════════════════════════════════════════════
      GET /api/analytics  — interactive analytics dashboard

@@ -404,6 +404,20 @@ export default {
   },
 
   /**
+   * Get total count of registered users (new-user counter)
+   * Each row = one unique email that registered via the 4-question form.
+   */
+  getUserCount: async () => {
+    try {
+      const result = await db.select({ total: count() }).from(users);
+      return Number(result[0]?.total ?? 0);
+    } catch (err) {
+      console.error('❌ getUserCount error:', err);
+      throw err;
+    }
+  },
+
+  /**
    * Get donors by blood group
    */
   getDonorsByBloodGroup: async (bloodGroup) => {
@@ -702,47 +716,56 @@ export default {
 
   /**
    * Save user profile (first 4 questions from the form)
-   * Stores: name, dob, city, donationType
+   * Stores: name, dob, city, donationType, email, phone
+   *
+   * Duplicate logic:
+   *   - If the EMAIL already exists → update that user's record (email is UNIQUE in schema).
+   *   - If the EMAIL does NOT exist → always INSERT a brand-new user row (new user count +1).
+   *   - Phone alone is NOT used as a duplicate key; two people can share a phone number.
    */
   saveUserProfile: async (userProfile) => {
     try {
       const emailKey = String(userProfile.email || '').toLowerCase().trim();
       const phoneKey = String(userProfile.phone || '').replace(/\D/g, '');
 
-      const existingUser = await db.select().from(users).where(
-        or(
-          emailKey ? eq(users.email, emailKey) : sql`false`,
-          phoneKey ? eq(users.phone, phoneKey) : sql`false`
-        )
-      ).limit(1);
+      // --- Only check by EMAIL (it is declared UNIQUE in the schema) ---
+      let existingUser = [];
+      if (emailKey) {
+        existingUser = await db.select().from(users)
+          .where(eq(users.email, emailKey))
+          .limit(1);
+      }
 
       if (existingUser.length) {
+        // Email matched → update the existing record
         const existing = existingUser[0];
         const updates = {
           name: userProfile.name || existing.name,
           dob: userProfile.dob || existing.dob,
           city: userProfile.city || existing.city,
           donationType: userProfile.donationType || existing.donationType,
-          email: emailKey || existing.email,
           phone: phoneKey || existing.phone,
           password: userProfile.password !== undefined ? userProfile.password : existing.password,
         };
 
         await db.update(users).set(updates).where(eq(users.id, existing.id));
-        return { id: existing.id, updated: true };
+        console.log(`♻️  User profile updated (existing user id=${existing.id}, email=${emailKey})`);
+        return { id: existing.id, updated: true, created: false };
       }
 
+      // Email not found → INSERT as a brand-new user
       const result = await db.insert(users).values({
-        name: userProfile.name,
-        dob: userProfile.dob,
-        city: userProfile.city,
-        donationType: userProfile.donationType,
+        name: userProfile.name || '',
+        dob: userProfile.dob || '',
+        city: userProfile.city || '',
+        donationType: userProfile.donationType || '',
         email: emailKey,
         phone: phoneKey,
         password: userProfile.password || '',
       }).returning({ id: users.id });
 
-      return { id: result[0]?.id, created: true };
+      console.log(`🆕 New user created (id=${result[0]?.id}, email=${emailKey})`);
+      return { id: result[0]?.id, created: true, updated: false };
     } catch (err) {
       console.error('❌ User profile save error:', err);
       throw err;
